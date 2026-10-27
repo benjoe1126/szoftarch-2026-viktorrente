@@ -10,7 +10,7 @@ enum class NodeType {
 
 data class BencodeNode(val nodeType: NodeType, val data : Any)
 
-fun decode(input: String): List<BencodeNode> {
+fun bencodeDecode(input: String): List<BencodeNode> {
     val ret = mutableListOf<BencodeNode>()
     var index = 0
 
