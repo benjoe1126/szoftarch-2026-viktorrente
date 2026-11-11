@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/src/shared/build/build.iml" filepath="$PROJECT_DIR$/src/shared/build/build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/shared/src/commonMain/commonMain.iml" filepath="$PROJECT_DIR$/src/shared/src/commonMain/commonMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/shared/src/commonTest/commonTest.iml" filepath="$PROJECT_DIR$/src/shared/src/commonTest/commonTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/desktopApp/desktopApp.iml" filepath="$PROJECT_DIR$/src/desktopApp/desktopApp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/shared/src/jvmMain/jvmMain.iml" filepath="$PROJECT_DIR$/src/shared/src/jvmMain/jvmMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/shared/src/jvmTest/jvmTest.iml" filepath="$PROJECT_DIR$/src/shared/src/jvmTest/jvmTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/szoftarch-2026-viktorrente.iml" filepath="$PROJECT_DIR$/.idea/szoftarch-2026-viktorrente.iml" />
+    </modules>
+  </component>
+</project>
