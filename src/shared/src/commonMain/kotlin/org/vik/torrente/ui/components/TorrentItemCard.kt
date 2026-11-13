@@ -1,0 +1,225 @@
+package org.vik.torrente.ui.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import org.vik.torrente.model.Torrent
+import org.vik.torrente.model.TorrentStatus
+import org.vik.torrente.ui.icons.AppIcons
+import org.vik.torrente.ui.util.Formatters
+
+@Composable
+fun TorrentItemCard(
+    torrent: Torrent,
+    onTogglePlayPause: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onOpenFolder: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // --- LEFT SIDE: Action Buttons ---
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (torrent.isFinished) {
+                    // In Material You, completed state uses tertiaryContainer
+                    FilledIconButton(
+                        onClick = { onOpenFolder(torrent.destinationPath) },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = AppIcons.Folder,
+                            contentDescription = "Open download folder",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                } else {
+                    // Play/Pause button styled with Material You primary / container roles
+                    val isDownloading = torrent.status == TorrentStatus.DOWNLOADING
+                    FilledIconButton(
+                        onClick = { onTogglePlayPause(torrent.id) },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = if (isDownloading) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            contentColor = if (isDownloading) {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onPrimary
+                            }
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isDownloading) AppIcons.Pause else AppIcons.Play,
+                            contentDescription = if (isDownloading) "Pause" else "Resume",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                // Delete button
+                IconButton(
+                    onClick = { onDelete(torrent.id) },
+                    modifier = Modifier.size(40.dp),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = AppIcons.Delete,
+                        contentDescription = "Delete torrent",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // --- MAIN BODY: Info, Progress Bar, Speeds ---
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Top Row: Name, Progress in Percent, Speed
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Torrent's Name
+                    Text(
+                        text = torrent.name,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Progress in Percent and Speed
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Percent
+                        Text(
+                            text = torrent.progressPercent,
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = when {
+                                torrent.isFinished -> MaterialTheme.colorScheme.tertiary
+                                torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                                else -> MaterialTheme.colorScheme.primary
+                            }
+                        )
+
+                        // Speed or Status
+                        val speedLabel = when {
+                            torrent.isFinished -> "Finished"
+                            torrent.status == TorrentStatus.PAUSED -> "Paused"
+                            else -> "↓ ${Formatters.formatSpeed(torrent.downloadSpeedBytesPerSec)}"
+                        }
+
+                        Text(
+                            text = speedLabel,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp
+                            ),
+                            color = when {
+                                torrent.isFinished -> MaterialTheme.colorScheme.tertiary
+                                torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                                else -> MaterialTheme.colorScheme.secondary
+                            }
+                        )
+                    }
+                }
+
+                // Below that: Progress Bar (styled with Material You tokens)
+                LinearProgressIndicator(
+                    progress = torrent.progress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = when {
+                        torrent.isFinished -> MaterialTheme.colorScheme.tertiary
+                        torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                        else -> MaterialTheme.colorScheme.primary
+                    },
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                )
+
+                // Secondary metadata row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val downloadedStr = Formatters.formatBytes(torrent.downloadedBytes)
+                    val totalStr = Formatters.formatBytes(torrent.totalBytes)
+
+                    Text(
+                        text = "$downloadedStr of $totalStr",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (torrent.destinationPath.isNotBlank()) {
+                        Text(
+                            text = "Save to: ${torrent.destinationPath}",
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
