@@ -176,6 +176,39 @@ fun TorrentItemCard(
                                 else -> MaterialTheme.colorScheme.secondary
                             }
                         )
+
+                        val bytesRemaining = torrent.totalBytes - torrent.downloadedBytes
+                        //time is in seconds
+                        val timeRemaining = if(torrent.downloadSpeedBytesPerSec != 0L){
+                            bytesRemaining / torrent.downloadSpeedBytesPerSec
+                        }else{
+                            0
+                        }
+                        val remainingSeconds = timeRemaining % 60
+                        val remainingMinutes = timeRemaining / 60
+                        val formattedTime = if(!torrent.isFinished){
+                            if(timeRemaining == 0L){
+                                ""
+                            }
+                            else {
+                                "${remainingMinutes} min ${remainingSeconds} sec remaining"
+                            }   
+                        }else{
+                            ""
+                        }
+
+                        Text(
+                            text = formattedTime,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 13.sp
+                            ),
+                            color = when {
+                                torrent.isFinished -> MaterialTheme.colorScheme.tertiary
+                                torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                                else -> MaterialTheme.colorScheme.secondary
+                            }
+                        )
                     }
                 }
 
