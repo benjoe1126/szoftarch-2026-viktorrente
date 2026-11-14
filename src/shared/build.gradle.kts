@@ -6,8 +6,7 @@ plugins {
 
 kotlin {
     jvm()
-    
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -18,6 +17,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(ktorLibs.network)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
