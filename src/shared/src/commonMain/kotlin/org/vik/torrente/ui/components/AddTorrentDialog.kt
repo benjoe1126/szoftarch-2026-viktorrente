@@ -40,9 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import org.vik.torrente.model.ParsedTorrentInfo
-import org.vik.torrente.platform.PlatformActions
 import org.vik.torrente.ui.icons.AppIcons
 import org.vik.torrente.ui.util.Formatters
+import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 
 @Composable
 fun AddTorrentDialog(
@@ -54,6 +54,18 @@ fun AddTorrentDialog(
     var destinationPath by remember(initialDestinationPath) { mutableStateOf(initialDestinationPath) }
     var selectedFileIds by remember(parsedInfo) {
         mutableStateOf(parsedInfo.files.map { it.id }.toSet())
+    }
+    
+    val directoryPicker = rememberDirectoryPickerLauncher(
+        title = "Select Download Destination Folder",
+        initialDirectory = initialDestinationPath
+    ) { file ->
+        if (file != null) {
+            val path = file.path
+            if (path != null) {
+                destinationPath = path
+            }
+        }
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -117,9 +129,7 @@ fun AddTorrentDialog(
 
                     Button(
                         onClick = {
-                            PlatformActions.chooseDirectory(destinationPath) { pickedPath ->
-                                destinationPath = pickedPath
-                            }
+                            directoryPicker.launch()
                         }
                     ) {
                         Icon(

@@ -17,17 +17,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import org.vik.torrente.model.ParsedTorrentInfo
-import org.vik.torrente.platform.PlatformActions
 import org.vik.torrente.service.MockTorrentService
 import org.vik.torrente.service.TorrentService
 import org.vik.torrente.ui.components.AddTorrentDialog
 import org.vik.torrente.ui.components.TopBar
 import org.vik.torrente.ui.components.TorrentList
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerType
 
 @Composable
 fun App(
-    torrentService: TorrentService = remember {
-        MockTorrentService(defaultDownloadPath = PlatformActions.getDefaultDownloadDirectory())
+    defaultDownloadDirectory: String,
+    onOpenDirectory: (String) -> Unit,
+    torrentService: TorrentService = remember(defaultDownloadDirectory) {
+        MockTorrentService(defaultDownloadPath = defaultDownloadDirectory)
     }
 ) {
     // Stock Material 3 (Material You) baseline color schemes
@@ -42,18 +45,28 @@ fun App(
         val coroutineScope = rememberCoroutineScope()
         var pendingTorrent by remember { mutableStateOf<ParsedTorrentInfo?>(null) }
 
+        val torrentFilePicker = rememberFilePickerLauncher(
+            type = PickerType.File(extensions = listOf("torrent")),
+            title = "Select .torrent file"
+        ) { file ->
+            if (file != null) {
+                val path = file.path
+                if (path != null) {
+                    coroutineScope.launch {
+                        val parsed = torrentService.parseTorrent(path, file.name)
+                        pendingTorrent = parsed
+                    }
+                }
+            }
+        }
+
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopBar(
                     torrents = torrents,
                     onAddTorrentClick = {
-                        PlatformActions.chooseTorrentFile { filePath, fileName ->
-                            coroutineScope.launch {
-                                val parsed = torrentService.parseTorrent(filePath, fileName)
-                                pendingTorrent = parsed
-                            }
-                        }
+                        torrentFilePicker.launch()
                     }
                 )
             }
@@ -62,14 +75,9 @@ fun App(
                 torrents = torrents,
                 onTogglePlayPause = { id -> torrentService.togglePlayPause(id) },
                 onDelete = { id -> torrentService.deleteTorrent(id) },
-                onOpenFolder = { path -> PlatformActions.openDirectory(path) },
+                onOpenFolder = { path -> onOpenDirectory(path) },
                 onAddTorrentClick = {
-                    PlatformActions.chooseTorrentFile { filePath, fileName ->
-                        coroutineScope.launch {
-                            val parsed = torrentService.parseTorrent(filePath, fileName)
-                            pendingTorrent = parsed
-                        }
-                    }
+                    torrentFilePicker.launch()
                 },
                 modifier = Modifier.padding(innerPadding)
             )
@@ -78,7 +86,7 @@ fun App(
             pendingTorrent?.let { parsedInfo ->
                 AddTorrentDialog(
                     parsedInfo = parsedInfo,
-                    initialDestinationPath = PlatformActions.getDefaultDownloadDirectory(),
+                    initialDestinationPath = defaultDownloadDirectory,
                     onConfirm = { destinationPath, selectedFileIds ->
                         torrentService.addTorrent(parsedInfo, destinationPath, selectedFileIds)
                         pendingTorrent = null

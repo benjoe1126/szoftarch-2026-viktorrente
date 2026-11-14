@@ -192,7 +192,7 @@ fun TorrentItemCard(
                             }
                             else {
                                 "${remainingMinutes} min ${remainingSeconds} sec remaining"
-                            }   
+                            }
                         }else{
                             ""
                         }
