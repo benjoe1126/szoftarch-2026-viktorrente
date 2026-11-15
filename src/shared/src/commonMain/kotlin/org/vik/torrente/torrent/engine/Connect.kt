@@ -10,8 +10,8 @@ data class ConnectRequest(
     val transactionId: Int = Random.nextInt()
 )
 
-fun ConnectRequest.toBytes(): ByteArray{
-    val buffer = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
+fun ConnectRequest.toBytes(): ByteArray {
+    val buffer = ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN)
     buffer.putLong(protocolID)
     buffer.putInt(action)
     buffer.putInt(transactionId)
@@ -25,19 +25,10 @@ data class ConnectResponse(
 )
 
 fun connectResponseFromBytes(bytes: ByteArray): ConnectResponse {
-    val buffer = ByteBuffer.wrap(bytes)
-    buffer.order(ByteOrder.BIG_ENDIAN)
+    val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
     return ConnectResponse(
         action = buffer.int,
         transactionId = buffer.int,
         connectionID = buffer.long
     )
-}
-
-fun ConnectResponse.toBytes(): ByteArray{
-    val buffer = ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN)
-    buffer.putInt(this.action)
-    buffer.putInt(this.transactionId)
-    buffer.putLong(this.connectionID)
-    return buffer.array()
 }
