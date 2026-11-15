@@ -1,0 +1,43 @@
+queryTorrents:
+SELECT *
+FROM Torrents;
+
+queryTorrentInfo:
+SELECT *
+FROM Torrents
+WHERE id = :torrent_id;
+
+queryPieceInfo:
+SELECT *
+FROM Pieces
+WHERE number=:piece_number AND torrent_id=:torrent_id;
+
+queryPiecesByTorrent:
+SELECT *
+FROM Pieces
+WHERE torrent_id=:torrent_id;
+
+queryPiecesByPeer:
+SELECT PeerHasPiece.torrent_id AS torrent_id, PeerHasPiece.piece_number AS number
+FROM PeerHasPiece
+WHERE torrent_id=:torrent_id AND peer_address=:peer_address;
+
+queryFileInfo:
+SELECT *
+FROM Files
+WHERE number=:file_number AND torrent_id=:torrent_id;
+
+queryFilesByTorrent:
+SELECT *
+FROM Files
+WHERE torrent_id=:torrent_id;
+
+queryPeerInfo:
+SELECT *
+FROM Peers
+WHERE address = :peer_address AND torrent_id = :torrent_id;
+
+queryPeersByPiece:
+SELECT PeerHasPiece.peer_address AS address, PeerHasPiece.torrent_id AS torrent_id
+FROM PeerHasPiece
+WHERE PeerHasPiece.torrent_id=:torrent_id AND PeerHasPiece.piece_number=:piece_number;

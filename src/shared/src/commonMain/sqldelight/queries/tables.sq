@@ -1,0 +1,45 @@
+CREATE TABLE IF NOT EXISTS Torrents(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tracker TEXT NOT NULL,
+    name TEXT NOT NULL,
+    length INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Files(
+    name TEXT NOT NULL,
+    length INTEGER NOT NULL,
+    number INTEGER NOT NULL,
+    torrent_id INTEGER NOT NULL,
+    PRIMARY KEY(torrent_id, number),
+    CONSTRAINT fk_torrentId FOREIGN KEY(torrent_id) REFERENCES Torrents(id)
+);
+
+CREATE TABLE IF NOT EXISTS Pieces(
+    hash TEXT NOT NULL,
+    length INTEGER NOT NULL,
+    number INTEGER NOT NULL,
+    torrent_id INTEGER NOT NULL,
+    status INTEGER NOT NULL,
+    download_path TEXT NOT NULL,
+    PRIMARY KEY(torrent_id, number),
+    CONSTRAINT fk_torrentId FOREIGN KEY(torrent_id) REFERENCES Torrents(id)
+);
+
+CREATE TABLE IF NOT EXISTS Peers(
+    address TEXT NOT NULL,
+    torrent_id INTEGER NOT NULL,
+    PRIMARY KEY(address, torrent_id),
+    CONSTRAINT fk_torrentId FOREIGN KEY(torrent_id) REFERENCES Torrents(id)
+);
+
+CREATE TABLE IF NOT EXISTS PeerHasPiece(
+    peer_address TEXT NOT NULL,
+    piece_number INTEGER NOT NULL,
+    torrent_id INTEGER NOT NULL,
+    PRIMARY KEY (peer_address, piece_number, torrent_id),
+    CONSTRAINT fk_peerAddress FOREIGN KEY (peer_address) REFERENCES Peers(address),
+    CONSTRAINT fk_pieceNumber FOREIGN KEY (piece_number) REFERENCES Pieces(number),
+    CONSTRAINT fk_pieceTorrentId FOREIGN KEY (torrent_id) REFERENCES Pieces(torrent_id),
+    CONSTRAINT fk_peerTorrentId FOREIGN KEY (torrent_id) REFERENCES Peers(torrent_id),
+    CONSTRAINT fk_torrentTorrentId FOREIGN KEY(torrent_id) REFERENCES Torrents(id)
+);
