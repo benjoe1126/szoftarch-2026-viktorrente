@@ -5,7 +5,8 @@ enum class PieceStatus{
 }
 
 data class PieceId(
-    val id: Long
+    val torrent_id: TorrentId,
+    val number: Long
 )
 
 data class PieceInfo(

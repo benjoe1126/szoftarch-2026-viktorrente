@@ -1,7 +1,8 @@
 package org.vik.torrente.repository.models
 
 data class FileId(
-    val id: Long
+    val torrent_id: TorrentId,
+    val number: Long
 )
 
 data class FileInfo(
