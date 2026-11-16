@@ -1,0 +1,15 @@
+insertTorrent:
+INSERT INTO Torrents (name, tracker, length)
+VALUES (:name,:tracker,:length);
+
+insertPiece:
+INSERT INTO Pieces (hash, length, torrent_id, number, status, download_path)
+VALUES (:hash, :length, :torrent_id, :number, :status, :download_path);
+
+insertFile:
+INSERT INTO Files (name, length, torrent_id, number)
+VALUES (:name, :length, :torrent_id, :number);
+
+insertPeer:
+INSERT INTO Peers (address, torrent_id)
+VALUES (:address, :torrent_id);

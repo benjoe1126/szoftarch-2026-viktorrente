@@ -8,6 +8,11 @@ data class PieceId(
     val torrent_id: TorrentId,
     val number: Long
 )
+{
+    companion object{
+        val PLACEHOLDER=PieceId(TorrentId.PLACEHOLDER,-1);
+    }
+}
 
 data class PieceInfo(
     val id: PieceId,
@@ -16,6 +21,5 @@ data class PieceInfo(
     val number:Long,
     val status: PieceStatus,
     val downloadPath: String,
-    val torrent: TorrentId,
-    val peers:List<PeerId>
+    val torrent: TorrentId
 )

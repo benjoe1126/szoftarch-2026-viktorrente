@@ -4,6 +4,11 @@ data class FileId(
     val torrent_id: TorrentId,
     val number: Long
 )
+{
+    companion object{
+        val PLACEHOLDER = FileId(TorrentId.PLACEHOLDER,-1);
+    }
+}
 
 data class FileInfo(
     val id: FileId,
