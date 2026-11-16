@@ -3,6 +3,7 @@ package org.vik.torrente.torrent.engine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.Socket
 import java.security.MessageDigest
 import java.util.BitSet
 import java.util.concurrent.ExecutorService
@@ -13,18 +14,27 @@ import kotlin.concurrent.thread
 import kotlin.random.Random
 
 /**
- * Downloads a single torrent: finds peers via its UDP trackers, connects to them,
- * requests blocks, verifies completed pieces against their SHA-1 hashes and writes them to [downloadDir].
+ * Downloads and seeds a single torrent: finds peers via its UDP trackers, connects to them,
+ * requests blocks, verifies completed pieces against their SHA-1 hashes and writes them to [downloadDir],
+ * and serves the pieces it has to interested peers.
  *
  * Pieces are assigned to one peer at a time; each peer keeps up to [MAX_PIPELINED_REQUESTS]
- * block requests in flight for its current piece.
+ * block requests in flight for its current piece. Up to [MAX_UPLOAD_SLOTS] interested peers are unchoked at once.
+ * Incoming connections are only accepted when a [listener] is given.
  */
-class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") {
+class TorrentEngine(
+    torrentFilePath: String,
+    downloadDir: String = "downloads",
+    private val listener: PeerListener? = null,
+) {
     companion object {
-        const val MAX_CONCURRENT_PEERS = 10
+        const val MAX_CONCURRENT_PEERS = 10 // outgoing connections
+        const val MAX_INCOMING_PEERS = 20 // extra connections we accept from the listener
         const val BLOCK_SIZE = 16 * 1024 // 16 KiB standard block size
         const val MAX_PIPELINED_REQUESTS = 10
-        const val LISTEN_PORT = 6881 // reported to trackers; we don't accept incoming connections yet
+        const val MAX_UPLOAD_SLOTS = 4
+        const val MAX_REQUEST_SIZE = 128 * 1024 // larger requests are ignored, as most clients do
+        const val LISTEN_PORT = 6881 // reported to trackers when there is no listener
     }
 
     val metadata = TorrentMetadata(File(torrentFilePath).readBytes())
@@ -49,7 +59,7 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
     val downloaded: Long get() = _downloaded.get()
     /** Bytes still needed to complete the torrent. */
     val left: Long get() = totalSize - verifiedBytes.get()
-    /** Total bytes sent to peers. Always 0 for now, since we don't serve pieces. */
+    /** Total bytes of piece data sent to peers. */
     val uploaded: Long get() = _uploaded.get()
 
     private val storage = PieceStorage(metadata, File(downloadDir))
@@ -76,6 +86,8 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
         var peerChoking = true
         var amInterested = false
         var current: ActivePiece? = null
+        var amChoking = true
+        var peerInterested = false
     }
 
     /** A piece being downloaded from a single peer. */
@@ -84,6 +96,13 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
         var nextOffset = 0 // offset of the next block to request
         var inFlight = 0
         var received = 0
+    }
+
+    // Kept in a property so unregister gets the same instance that was registered
+    private val incomingHandler = PeerListener.IncomingHandler(::acceptIncoming)
+
+    init {
+        listener?.register(metadata.infoHash, incomingHandler)
     }
 
     val isComplete: Boolean
@@ -102,6 +121,42 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
         sessions.keys.filter { it.isConnected }
     }
 
+    /** Snapshot of the verified pieces, e.g. to hand to [restorePieces] of a later engine for the same torrent. */
+    val completedPieces: BitSet
+        get() = synchronized(lock) { havePieces.clone() as BitSet }
+
+    // ------------------------------------------------------------------------
+    // Existing data
+    // ------------------------------------------------------------------------
+
+    /**
+     * Hashes the data already on disk (e.g. from an earlier session) and marks every valid piece as complete.
+     * Blocking; call before connecting to peers. Returns the number of valid pieces.
+     */
+    fun checkExistingPieces(): Int {
+        val valid = BitSet(numPieces)
+        val sha1 = MessageDigest.getInstance("SHA-1")
+        for (index in 0 until numPieces) {
+            if (!storage.mayContain(index)) continue
+            val data = storage.readBlock(index, 0, metadata.pieceSize(index))
+            if (sha1.digest(data).contentEquals(metadata.pieceHashes[index])) valid.set(index)
+        }
+        restorePieces(valid)
+        println("[TorrentEngine] Found ${valid.cardinality()}/$numPieces valid pieces on disk")
+        return valid.cardinality()
+    }
+
+    /** Marks [pieces] as complete without checking them, trusting an earlier engine's [completedPieces]. */
+    fun restorePieces(pieces: BitSet) = synchronized(lock) {
+        for (index in 0 until numPieces) {
+            if (!pieces[index] || havePieces[index]) continue
+            havePieces.set(index)
+            verifiedBytes.addAndGet(metadata.pieceSize(index).toLong())
+        }
+        // Don't announce `completed` for data we already had
+        if (havePieces.cardinality() == numPieces) completedAnnounced.set(true)
+    }
+
     /** Number of peers still queued or being connected to. */
     val pendingPeerCount: Int
         get() = synchronized(lock) { pendingPeers.size + connecting }
@@ -112,11 +167,12 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
 
     /**
      * Announces to the torrent's UDP trackers (in order) and returns the peers of the first one that answers.
+     * Use [AnnounceEvent.STARTED] for the first announce of a session and [AnnounceEvent.NONE] afterwards.
      */
-    suspend fun discoverPeers(): List<PeerAddresses> = withContext(Dispatchers.IO) {
+    suspend fun discoverPeers(event: Int = AnnounceEvent.STARTED): List<PeerAddresses> = withContext(Dispatchers.IO) {
         for (url in metadata.trackers.filter { it.startsWith("udp://") }) {
             try {
-                val response = announce(url, AnnounceEvent.STARTED)
+                val response = announce(url, event)
                 println("[TorrentEngine] Tracker $url returned ${response.peerAddresses.size} peers (seeders=${response.seeders}, leechers=${response.leechers})")
                 return@withContext response.peerAddresses.filter { it.address != 0 && it.portNumber != 0 }
             } catch (e: Exception) {
@@ -135,7 +191,7 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
             uploaded = uploaded,
             event = event,
             key = key,
-            port = LISTEN_PORT,
+            port = listener?.port ?: LISTEN_PORT,
         ).also { lastTracker = url }
 
     /** Fire-and-forget announce to the tracker that last answered. */
@@ -187,7 +243,7 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
 
         val accepted = synchronized(lock) {
             connecting--
-            (connected && !stopped).also { if (it) sessions[connection] = PeerSession(connection) }
+            connected && addSession(connection)
         }
         if (accepted) {
             connection.start()
@@ -198,13 +254,57 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
         }
     }
 
+    /** Called by the [listener] for peers connecting to us. */
+    private fun acceptIncoming(socket: Socket, handshake: Handshake) {
+        val connection = PeerConnection(
+            host = socket.inetAddress.hostAddress,
+            port = socket.port,
+            infoHash = metadata.infoHash,
+            peerId = peerId,
+            onMessage = ::handlePeerMessage,
+            onDisconnect = ::handleDisconnect,
+            socket = socket,
+        )
+        val hasRoom = synchronized(lock) { !stopped && sessions.size < MAX_CONCURRENT_PEERS + MAX_INCOMING_PEERS }
+        if (!hasRoom || !connection.accept(handshake.peerId)) {
+            socket.close()
+            return
+        }
+        if (synchronized(lock) { addSession(connection) }) {
+            connection.start()
+            println("[TorrentEngine] Accepted peer $connection")
+        } else {
+            connection.disconnect()
+        }
+    }
+
+    /** Registers a handshaken connection and advertises our pieces to it. Caller must hold `lock`. */
+    private fun addSession(connection: PeerConnection): Boolean {
+        if (stopped) return false
+        sessions[connection] = PeerSession(connection)
+        // The bitfield must be the first message after the handshake, so send it before the reader starts
+        if (!havePieces.isEmpty) connection.sendMessage(PeerWireMessage.Bitfield(bitfieldBytes()))
+        return true
+    }
+
+    private fun bitfieldBytes(): ByteArray {
+        val bits = ByteArray((numPieces + 7) / 8)
+        for (i in 0 until numPieces) {
+            if (havePieces[i]) bits[i / 8] = (bits[i / 8].toInt() or (0x80 ushr (i % 8))).toByte()
+        }
+        return bits
+    }
+
     /** Starts requesting pieces from all connected peers that have unchoked us. */
     fun startDownloading() {
         synchronized(lock) {
             if (downloading) return
             downloading = true
             println("[TorrentEngine] Starting download of $numPieces pieces ($totalSize bytes)")
-            sessions.values.toList().forEach { requestBlocks(it) }
+            sessions.values.toList().forEach {
+                updateInterest(it)
+                requestBlocks(it)
+            }
         }
     }
 
@@ -217,6 +317,7 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
             pendingPeers.clear()
             sessions.keys.toList()
         }
+        listener?.unregister(metadata.infoHash, incomingHandler)
         connections.forEach { it.disconnect() }
         executor.shutdownNow()
         storage.close()
@@ -226,7 +327,10 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
     private fun handleDisconnect(connection: PeerConnection, reason: String) {
         println("[TorrentEngine] $reason")
         synchronized(lock) {
-            sessions.remove(connection)?.let { releaseCurrentPiece(it) }
+            sessions.remove(connection)?.let {
+                releaseCurrentPiece(it)
+                if (!it.amChoking) unchokeNext()
+            }
         }
         fillConnectionSlots()
     }
@@ -257,8 +361,49 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
                 releaseCurrentPiece(session)
             }
             is PeerWireMessage.Piece -> handleBlock(session, msg)
-            else -> {} // We don't upload yet, so requests/interest from the peer are ignored
+            is PeerWireMessage.Interested -> {
+                session.peerInterested = true
+                if (session.amChoking && unchokedCount() < MAX_UPLOAD_SLOTS) setChoking(session, false)
+            }
+            is PeerWireMessage.NotInterested -> {
+                session.peerInterested = false
+                if (!session.amChoking) {
+                    setChoking(session, true)
+                    unchokeNext()
+                }
+            }
+            is PeerWireMessage.Request -> serveBlock(session, msg)
+            else -> {} // blocks are sent as soon as they're requested, so there's nothing to Cancel
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // Uploading
+    // ------------------------------------------------------------------------
+
+    private fun unchokedCount() = sessions.values.count { !it.amChoking }
+
+    private fun setChoking(session: PeerSession, choking: Boolean) {
+        session.amChoking = choking
+        session.connection.sendMessage(if (choking) PeerWireMessage.Choke else PeerWireMessage.Unchoke)
+    }
+
+    /** Gives a free upload slot to an interested peer that is still choked. */
+    private fun unchokeNext() {
+        if (unchokedCount() >= MAX_UPLOAD_SLOTS) return
+        sessions.values.firstOrNull { it.amChoking && it.peerInterested }?.let { setChoking(it, false) }
+    }
+
+    private fun serveBlock(session: PeerSession, msg: PeerWireMessage.Request) {
+        val valid = !session.amChoking &&
+            msg.pieceIndex in 0 until numPieces && havePieces[msg.pieceIndex] &&
+            msg.length in 1..MAX_REQUEST_SIZE &&
+            msg.begin >= 0 && msg.begin + msg.length <= metadata.pieceSize(msg.pieceIndex)
+        if (!valid) return
+
+        val block = storage.readBlock(msg.pieceIndex, msg.begin, msg.length)
+        session.connection.sendMessage(PeerWireMessage.Piece(msg.pieceIndex, msg.begin, block))
+        _uploaded.addAndGet(block.size.toLong())
     }
 
     private fun handleBlock(session: PeerSession, msg: PeerWireMessage.Piece) {
@@ -301,7 +446,7 @@ class TorrentEngine(torrentFilePath: String, downloadDir: String = "downloads") 
 
     /** Sends Interested/NotInterested when the peer gains or loses pieces we need. */
     private fun updateInterest(session: PeerSession) {
-        val interested = hasNeededPiece(session)
+        val interested = downloading && hasNeededPiece(session)
         if (interested == session.amInterested) return
         session.amInterested = interested
         session.connection.sendMessage(if (interested) PeerWireMessage.Interested else PeerWireMessage.NotInterested)

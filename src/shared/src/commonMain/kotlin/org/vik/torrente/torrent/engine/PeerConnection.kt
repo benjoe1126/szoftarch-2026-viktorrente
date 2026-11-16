@@ -20,6 +20,7 @@ class PeerConnection(
     private val peerId: ByteArray,
     private val onMessage: (PeerConnection, PeerWireMessage) -> Unit = { _, _ -> },
     private val onDisconnect: (PeerConnection, String) -> Unit = { _, _ -> },
+    private val socket: Socket = Socket(), // already connected for incoming connections, see [accept]
 ) {
     companion object {
         private const val CONNECT_TIMEOUT_MS = 10_000
@@ -28,7 +29,6 @@ class PeerConnection(
         private const val MAX_MESSAGE_LENGTH = 1 shl 20
     }
 
-    private val socket = Socket()
     private lateinit var input: DataInputStream
     private lateinit var output: DataOutputStream
     private val writeLock = Any()
@@ -67,6 +67,29 @@ class PeerConnection(
             true
         } catch (e: Exception) {
             println("[PeerConnection] Failed to connect to $this — ${e.message}")
+            closeSocket()
+            false
+        }
+    }
+
+    /**
+     * Completes the handshake on an incoming connection whose handshake [PeerListener] already read,
+     * by sending ours back. Returns true if the connection is ready for [start].
+     */
+    fun accept(remotePeerId: ByteArray): Boolean {
+        return try {
+            socket.soTimeout = READ_TIMEOUT_MS
+            input = DataInputStream(socket.getInputStream().buffered())
+            output = DataOutputStream(socket.getOutputStream().buffered())
+
+            output.write(Handshake(infoHash, peerId).toBytes())
+            output.flush()
+
+            this.remotePeerId = remotePeerId
+            running.set(true)
+            true
+        } catch (e: Exception) {
+            println("[PeerConnection] Failed to accept $this — ${e.message}")
             closeSocket()
             false
         }
