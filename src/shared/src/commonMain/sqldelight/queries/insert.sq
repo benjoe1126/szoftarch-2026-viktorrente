@@ -13,3 +13,10 @@ VALUES (:name, :length, :torrent_id, :number);
 insertPeer:
 INSERT INTO Peers (address, torrent_id)
 VALUES (:address, :torrent_id);
+
+insertPeerOffering:
+INSERT INTO PeerHasPiece (torrent_id, peer_address, piece_number)
+VALUES (:torrent_id, :peer_address, :piece_number);
+
+affectedRows:
+SELECT changes();
