@@ -2,6 +2,6 @@ package org.vik.torrente.repository.database
 
 import app.cash.sqldelight.db.SqlDriver
 
-expect class DatabaseDriverFactory {
+interface DatabaseDriverFactory {
     fun create(): SqlDriver
 }

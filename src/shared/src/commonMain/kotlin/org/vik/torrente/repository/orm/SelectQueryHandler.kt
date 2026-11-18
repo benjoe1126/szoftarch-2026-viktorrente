@@ -111,7 +111,7 @@ fun TorrentRepository.getPeerArray(peers:List<PeerId>):List<PeerInfo?> {
 }
 
 fun TorrentRepository.getPeersByPiece(piece:PieceId) : List<PeerInfo> {
-    return db.selectQueries.queryPeersByPiece(piece.number, piece.torrent_id.id).executeAsList().map{
+    return db.selectQueries.queryPeersByPiece(piece.torrent_id.id, piece.number).executeAsList().map{
             peer ->
         PeerInfo(PeerId(TorrentId(peer.torrent_id), peer.address),peer.address, TorrentId(peer.torrent_id));
     };

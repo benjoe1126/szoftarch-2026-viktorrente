@@ -37,9 +37,7 @@ CREATE TABLE IF NOT EXISTS PeerHasPiece(
     piece_number INTEGER NOT NULL,
     torrent_id INTEGER NOT NULL,
     PRIMARY KEY (peer_address, piece_number, torrent_id),
-    CONSTRAINT fk_peerAddress FOREIGN KEY (peer_address) REFERENCES Peers(address),
-    CONSTRAINT fk_pieceNumber FOREIGN KEY (piece_number) REFERENCES Pieces(number),
-    CONSTRAINT fk_pieceTorrentId FOREIGN KEY (torrent_id) REFERENCES Pieces(torrent_id),
-    CONSTRAINT fk_peerTorrentId FOREIGN KEY (torrent_id) REFERENCES Peers(torrent_id),
-    CONSTRAINT fk_torrentTorrentId FOREIGN KEY(torrent_id) REFERENCES Torrents(id)
+    CONSTRAINT fk_peer FOREIGN KEY (peer_address, torrent_id) REFERENCES Peers(address, torrent_id),
+    CONSTRAINT fk_piece FOREIGN KEY (piece_number, torrent_id) REFERENCES Pieces(number, torrent_id),
+    CONSTRAINT fk_torrent FOREIGN KEY(torrent_id) REFERENCES Torrents(id)
 );
