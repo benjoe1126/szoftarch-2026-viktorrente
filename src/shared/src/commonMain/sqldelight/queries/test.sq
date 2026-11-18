@@ -1,0 +1,47 @@
+clearTorrents:
+DELETE FROM Torrents;
+
+clearPieces:
+DELETE FROM Pieces;
+
+clearFiles:
+DELETE FROM Files;
+
+clearPeers:
+DELETE FROM Peers;
+
+clearPeerHasPiece:
+DELETE FROM PeerHasPiece;
+
+fillTorrents:
+INSERT INTO Torrents (name, tracker, length)
+VALUES ("nigga", "nigga.org", 67);
+
+fillFiles:
+INSERT INTO Files (name, length, number, torrent_id)
+VALUES
+("big.txt", 34, 0, 1),
+("chungus.txt", 33, 1, 1);
+
+fillPieces:
+INSERT INTO Pieces (hash, length, number, torrent_id, status, download_path)
+VALUES
+("globus", 50, 0, 1, 0, "globus.piece"),
+("mustar", 27, 1, 1, 0, "mustar.piece");
+
+fillPeers:
+INSERT INTO Peers (address, torrent_id)
+VALUES
+("idf.hu", 1),
+("sussy.hu", 1),
+("amogus.hu",1);
+
+fillPeerHasPiece:
+INSERT INTO PeerHasPiece (torrent_id, peer_address, piece_number)
+VALUES
+(1, "idf.hu", 0),
+(1, "idf.hu", 1),
+(1, "sussy.hu",1);
+
+affectedRows:
+SELECT changes();
