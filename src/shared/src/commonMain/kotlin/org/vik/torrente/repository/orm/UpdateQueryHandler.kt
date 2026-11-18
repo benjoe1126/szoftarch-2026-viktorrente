@@ -3,6 +3,7 @@ package org.vik.torrente.repository.orm
 import org.vik.torrente.repository.TorrentRepository
 import org.vik.torrente.repository.models.FileInfo
 import org.vik.torrente.repository.models.PeerId
+import org.vik.torrente.repository.models.PeerInfo
 import org.vik.torrente.repository.models.PieceId
 import org.vik.torrente.repository.models.PieceInfo
 import org.vik.torrente.repository.models.TorrentInfo

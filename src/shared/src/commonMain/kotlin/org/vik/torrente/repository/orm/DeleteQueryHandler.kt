@@ -4,8 +4,6 @@ import org.vik.torrente.repository.TorrentRepository
 import org.vik.torrente.repository.models.*
 
 fun TorrentRepository.deleteTorrent(torrent: TorrentId):Boolean{
-    var result = true;
-
     return runCatching{
         if(getTorrentById(torrent)!=null)
         {

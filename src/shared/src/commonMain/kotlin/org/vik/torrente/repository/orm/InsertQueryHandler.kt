@@ -23,25 +23,35 @@ fun TorrentRepository.insertPeer(peer:PeerInfo):Boolean{
 }
 
 /*
-torrent id is not used, a placeholder value is sufficient
+ids are automatically created, a placeholder value is sufficient
  */
 fun TorrentRepository.insertTorrentFullData(torrent:TorrentInfo, pieces:List<PieceInfo>, files:List<FileInfo>, peers:List<PeerInfo>) : Boolean
 {
     return db.transactionWithResult {
         if(!insertTorrent(torrent))
             rollback(false);
+        val torrent = getTorrentByName(torrent.name) ?: rollback(false);
 
-        for(piece in pieces)
-            if(!insertPiece(piece))
+        for((_, hash, length, number, status, downloadPath) in pieces)
+        {
+            val p=PieceInfo(PieceId(torrent.id, number), hash, length, number, status, downloadPath, torrent.id);
+            if(!insertPiece(p))
                 rollback(false);
+        }
 
-        for(file in files)
-            if(!insertFile(file))
+        for((_, name, length, number) in files)
+        {
+            val f=FileInfo(FileId(torrent.id, number), name, length, number, torrent.id);
+            if(!insertFile(f))
                 rollback(false);
+        }
 
-        for(peer in peers)
-            if(!insertPeer(peer))
+        for((_, address) in peers)
+        {
+            val p=PeerInfo(PeerId(torrent.id, address), address, torrent.id);
+            if(!insertPeer(p))
                 rollback(false);
+        }
 
         true
     } as Boolean;
@@ -51,8 +61,9 @@ fun TorrentRepository.insertPeerOffering(peer:PeerId, piece:PieceId):Boolean {
     if(peer.torrent_id.id != piece.torrent_id.id)
         return false;
 
-    return db.transactionWithResult {
+    return runCatching { db.transactionWithResult {
         db.insertQueries.insertPeerOffering(peer.torrent_id.id, peer.address, piece.number);
-        db.insertQueries.affectedRows().executeAsOne().toInt()==1;
-    }
+        if(db.insertQueries.affectedRows().executeAsOne().toInt()!=1)
+            throw Exception();
+    }}.isSuccess;
 }
