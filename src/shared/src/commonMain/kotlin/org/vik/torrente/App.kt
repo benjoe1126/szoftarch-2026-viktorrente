@@ -76,6 +76,8 @@ fun App(
                 onTogglePlayPause = { id -> torrentService.togglePlayPause(id) },
                 onDelete = { id -> torrentService.deleteTorrent(id) },
                 onOpenFolder = { path -> onOpenDirectory(path) },
+                onReannounce = { id -> torrentService.reannounce(id) },
+                onAddPeer = { id, peer -> torrentService.addPeer(id, peer) },
                 onAddTorrentClick = {
                     torrentFilePicker.launch()
                 },
@@ -87,8 +89,8 @@ fun App(
                 AddTorrentDialog(
                     parsedInfo = parsedInfo,
                     initialDestinationPath = defaultDownloadDirectory,
-                    onConfirm = { destinationPath, selectedFileIds ->
-                        torrentService.addTorrent(parsedInfo, destinationPath, selectedFileIds)
+                    onConfirm = { destinationPath, selectedFileIds, mode ->
+                        torrentService.addTorrent(parsedInfo, destinationPath, selectedFileIds, mode)
                         pendingTorrent = null
                     },
                     onDismiss = {

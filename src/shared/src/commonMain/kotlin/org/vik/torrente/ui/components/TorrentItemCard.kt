@@ -27,7 +27,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
 import org.vik.torrente.model.Torrent
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
 import org.vik.torrente.model.TorrentStatus
 import org.vik.torrente.ui.icons.AppIcons
 import org.vik.torrente.ui.util.Formatters
@@ -38,8 +58,45 @@ fun TorrentItemCard(
     onTogglePlayPause: (String) -> Unit,
     onDelete: (String) -> Unit,
     onOpenFolder: (String) -> Unit,
+    onReannounce: (String) -> Unit,
+    onAddPeer: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    var showAddPeerDialog by remember { mutableStateOf(false) }
+    var peerIpAndPort by remember { mutableStateOf("") }
+    
+    if (showAddPeerDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddPeerDialog = false },
+            title = { Text("Add Peer") },
+            text = {
+                OutlinedTextField(
+                    value = peerIpAndPort,
+                    onValueChange = { peerIpAndPort = it },
+                    label = { Text("IP:PORT") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onAddPeer(torrent.id, peerIpAndPort)
+                        showAddPeerDialog = false
+                    },
+                    enabled = peerIpAndPort.isNotBlank()
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddPeerDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -57,47 +114,47 @@ fun TorrentItemCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (torrent.isFinished) {
-                    // In Material You, completed state uses tertiaryContainer
-                    FilledIconButton(
-                        onClick = { onOpenFolder(torrent.destinationPath) },
-                        modifier = Modifier.size(40.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.Folder,
-                            contentDescription = "Open download folder",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                } else {
-                    // Play/Pause button styled with Material You primary / container roles
-                    val isDownloading = torrent.status == TorrentStatus.DOWNLOADING
-                    FilledIconButton(
-                        onClick = { onTogglePlayPause(torrent.id) },
-                        modifier = Modifier.size(40.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = if (isDownloading) {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
-                            contentColor = if (isDownloading) {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onPrimary
-                            }
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (isDownloading) AppIcons.Pause else AppIcons.Play,
-                            contentDescription = if (isDownloading) "Pause" else "Resume",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                // Play/Pause button styled with Material You primary / container roles
+                val isDownloading = torrent.status == TorrentStatus.DOWNLOADING
+                val isSeeding = torrent.status == TorrentStatus.SEEDING
+                val isRunning = isDownloading || isSeeding
+                FilledIconButton(
+                    onClick = { onTogglePlayPause(torrent.id) },
+                    modifier = Modifier.size(40.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = if (isRunning) {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                        contentColor = if (isRunning) {
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onPrimary
+                        }
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isRunning) AppIcons.Pause else AppIcons.Play,
+                        contentDescription = if (isRunning) "Pause" else "Resume",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                // Folder button always visible
+                FilledIconButton(
+                    onClick = { onOpenFolder(torrent.destinationPath) },
+                    modifier = Modifier.size(40.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = AppIcons.Folder,
+                        contentDescription = "Open download folder",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
                 // Delete button
@@ -113,6 +170,39 @@ fun TorrentItemCard(
                         contentDescription = "Delete torrent",
                         modifier = Modifier.size(20.dp)
                     )
+                }
+
+                Box {
+                    IconButton(
+                        onClick = { expanded = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = AppIcons.MoreVert,
+                            contentDescription = "More options",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Reannounce") },
+                            onClick = {
+                                expanded = false
+                                onReannounce(torrent.id)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Add Peer") },
+                            onClick = {
+                                expanded = false
+                                peerIpAndPort = ""
+                                showAddPeerDialog = true
+                            }
+                        )
+                    }
                 }
             }
 
@@ -159,6 +249,11 @@ fun TorrentItemCard(
 
                         // Speed or Status
                         val speedLabel = when {
+                            torrent.status == TorrentStatus.SEEDING -> "Seeding (↑ ${Formatters.formatSpeed(torrent.uploadSpeedBytesPerSec)})"
+                            torrent.status == TorrentStatus.CHECKING -> "Checking"
+                            torrent.status == TorrentStatus.STARTING -> "Starting"
+                            torrent.status == TorrentStatus.STOPPED -> "Stopped"
+                            torrent.status == TorrentStatus.ERROR -> "Error"
                             torrent.isFinished -> "Finished"
                             torrent.status == TorrentStatus.PAUSED -> "Paused"
                             else -> "↓ ${Formatters.formatSpeed(torrent.downloadSpeedBytesPerSec)}"
@@ -214,7 +309,7 @@ fun TorrentItemCard(
 
                 // Below that: Progress Bar (styled with Material You tokens)
                 LinearProgressIndicator(
-                    progress = torrent.progress,
+                    progress = { torrent.progress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
@@ -235,9 +330,15 @@ fun TorrentItemCard(
                 ) {
                     val downloadedStr = Formatters.formatBytes(torrent.downloadedBytes)
                     val totalStr = Formatters.formatBytes(torrent.totalBytes)
+                    
+                    val metadataStr = if (torrent.status == TorrentStatus.STOPPED || torrent.status == TorrentStatus.PAUSED) {
+                        "$downloadedStr of $totalStr"
+                    } else {
+                        "$downloadedStr of $totalStr • Peers: ${torrent.peers}"
+                    }
 
                     Text(
-                        text = "$downloadedStr of $totalStr",
+                        text = metadataStr,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

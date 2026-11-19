@@ -194,4 +194,29 @@ object AppIcons {
             }
         }.build()
     }
+
+    val MoreVert: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "MoreVert",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(12f, 8f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12f, 4f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12f, 8f)
+                close()
+                moveTo(12f, 14f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12f, 10f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12f, 14f)
+                close()
+                moveTo(12f, 20f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12f, 16f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12f, 20f)
+                close()
+            }
+        }.build()
+    }
 }
