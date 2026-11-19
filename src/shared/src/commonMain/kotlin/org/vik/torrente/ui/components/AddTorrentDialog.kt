@@ -39,7 +39,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import org.vik.torrente.model.ParsedTorrentInfo
+import org.vik.torrente.model.TorrentMode
 import org.vik.torrente.ui.icons.AppIcons
 import org.vik.torrente.ui.util.Formatters
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
@@ -48,13 +52,14 @@ import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 fun AddTorrentDialog(
     parsedInfo: ParsedTorrentInfo,
     initialDestinationPath: String,
-    onConfirm: (destinationPath: String, selectedFileIds: Set<String>) -> Unit,
+    onConfirm: (destinationPath: String, selectedFileIds: Set<String>, mode: TorrentMode) -> Unit,
     onDismiss: () -> Unit
 ) {
     var destinationPath by remember(initialDestinationPath) { mutableStateOf(initialDestinationPath) }
     var selectedFileIds by remember(parsedInfo) {
         mutableStateOf(parsedInfo.files.map { it.id }.toSet())
     }
+    var selectedMode by remember { mutableStateOf(TorrentMode.DOWNLOAD) }
     
     val directoryPicker = rememberDirectoryPickerLauncher(
         title = "Select Download Destination Folder",
@@ -139,6 +144,43 @@ fun AddTorrentDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Browse...")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // --- Mode Selection Section ---
+                Text(
+                    text = "Mode",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SegmentedButton(
+                        selected = selectedMode == TorrentMode.DOWNLOAD,
+                        onClick = { selectedMode = TorrentMode.DOWNLOAD },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
+                    ) {
+                        Text("Download")
+                    }
+                    SegmentedButton(
+                        selected = selectedMode == TorrentMode.DOWNLOAD_AND_SEED,
+                        onClick = { selectedMode = TorrentMode.DOWNLOAD_AND_SEED },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
+                    ) {
+                        Text("Download & Seed")
+                    }
+                    SegmentedButton(
+                        selected = selectedMode == TorrentMode.SEED,
+                        onClick = { selectedMode = TorrentMode.SEED },
+                        shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
+                    ) {
+                        Text("Seed Only")
                     }
                 }
 
@@ -263,7 +305,7 @@ fun AddTorrentDialog(
 
                     Button(
                         onClick = {
-                            onConfirm(destinationPath, selectedFileIds)
+                            onConfirm(destinationPath, selectedFileIds, selectedMode)
                         },
                         enabled = selectedFileIds.isNotEmpty() && destinationPath.isNotBlank()
                     ) {

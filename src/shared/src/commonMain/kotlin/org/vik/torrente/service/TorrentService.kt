@@ -3,6 +3,7 @@ package org.vik.torrente.service
 import kotlinx.coroutines.flow.StateFlow
 import org.vik.torrente.model.ParsedTorrentInfo
 import org.vik.torrente.model.Torrent
+import org.vik.torrente.model.TorrentMode
 
 /**
  * Service interface for managing BitTorrent operations.
@@ -25,7 +26,8 @@ interface TorrentService {
     fun addTorrent(
         parsedInfo: ParsedTorrentInfo,
         destinationPath: String,
-        selectedFileIds: Set<String>
+        selectedFileIds: Set<String>,
+        mode: TorrentMode
     )
 
     /**
@@ -37,4 +39,14 @@ interface TorrentService {
      * Removes the torrent from the client.
      */
     fun deleteTorrent(torrentId: String)
+
+    /**
+     * Forces a re-announce to the tracker for a specific torrent.
+     */
+    fun reannounce(torrentId: String)
+
+    /**
+     * Manually adds a peer to a specific torrent.
+     */
+    fun addPeer(torrentId: String, peerIpAndPort: String)
 }

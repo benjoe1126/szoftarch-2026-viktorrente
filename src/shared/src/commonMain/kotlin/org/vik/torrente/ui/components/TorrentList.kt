@@ -29,6 +29,8 @@ fun TorrentList(
     onTogglePlayPause: (String) -> Unit,
     onDelete: (String) -> Unit,
     onOpenFolder: (String) -> Unit,
+    onReannounce: (String) -> Unit,
+    onAddPeer: (String, String) -> Unit,
     onAddTorrentClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -89,7 +91,9 @@ fun TorrentList(
                     torrent = torrent,
                     onTogglePlayPause = onTogglePlayPause,
                     onDelete = onDelete,
-                    onOpenFolder = onOpenFolder
+                    onOpenFolder = onOpenFolder,
+                    onReannounce = onReannounce,
+                    onAddPeer = onAddPeer
                 )
             }
         }

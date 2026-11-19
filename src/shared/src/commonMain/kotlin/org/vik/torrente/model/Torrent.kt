@@ -4,10 +4,20 @@ package org.vik.torrente.model
  * Status of a torrent in the client.
  */
 enum class TorrentStatus {
+    CHECKING,
+    STARTING,
     DOWNLOADING,
+    SEEDING,
     PAUSED,
     COMPLETED,
+    STOPPED,
     ERROR
+}
+
+enum class TorrentMode {
+    DOWNLOAD,
+    DOWNLOAD_AND_SEED,
+    SEED
 }
 
 /**
@@ -32,6 +42,7 @@ data class Torrent(
     val uploadSpeedBytesPerSec: Long,
     val status: TorrentStatus,
     val destinationPath: String,
+    val peers: Int = 0,
     val files: List<TorrentFile> = emptyList()
 ) {
     val progress: Float
@@ -45,7 +56,7 @@ data class Torrent(
         get() = "${(progress * 100).toInt()}%"
 
     val isFinished: Boolean
-        get() = progress >= 1.0f || status == TorrentStatus.COMPLETED
+        get() = progress >= 1.0f || status == TorrentStatus.COMPLETED || status == TorrentStatus.SEEDING
 }
 
 /**
