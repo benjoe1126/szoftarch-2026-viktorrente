@@ -1,0 +1,27 @@
+deleteTorrentByTorrentId:
+DELETE FROM Torrents
+WHERE id=:torrent_id;
+
+deletePieceByPieceId:
+DELETE FROM Pieces
+WHERE torrent_id=:torrent_id AND number=:number;
+
+deleteFileByFileId:
+DELETE FROM Files
+WHERE torrent_id=:torrent_id AND number=:number;
+
+deletePeerByPeerId:
+DELETE FROM Peers
+WHERE torrent_id=:torrent_id AND address=:address;
+
+deletePhpByTorrentId:
+DELETE FROM PeerHasPiece
+WHERE torrent_id=:torrent_id;
+
+deletePhpByPieceId:
+DELETE FROM PeerHasPiece
+WHERE torrent_id=:torrent_id AND piece_number=:number;
+
+deletePhpByPeerId:
+DELETE FROM PeerHasPiece
+WHERE torrent_id=:torrent_id AND peer_address=:address;
