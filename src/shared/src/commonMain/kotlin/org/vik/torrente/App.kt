@@ -88,7 +88,9 @@ fun App(
                     onOpenFolder = { path -> onOpenDirectory(path) },
                     onReannounce = { id -> torrentService.reannounce(id) },
                     onAddPeer = { id, peer -> torrentService.addPeer(id, peer) },
-                    onTorrentSelected = { id -> selectedTorrentId = id },
+                    onTorrentSelected = { id -> 
+                        selectedTorrentId = if (selectedTorrentId == id) null else id 
+                    },
                     onAddTorrentClick = {
                         torrentFilePicker.launch()
                     },
@@ -101,8 +103,11 @@ fun App(
                         HorizontalDivider()
                         TorrentDashboard(
                             torrent = selectedTorrent,
+                            onClose = { selectedTorrentId = null },
                             modifier = Modifier.height(300.dp)
                         )
+                    } else {
+                        selectedTorrentId = null
                     }
                 }
             }

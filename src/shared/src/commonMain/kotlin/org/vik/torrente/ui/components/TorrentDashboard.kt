@@ -9,22 +9,42 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.vik.torrente.model.Torrent
 import org.vik.torrente.ui.util.Formatters
 
+import org.vik.torrente.ui.icons.AppIcons
+
 @Composable
-fun TorrentDashboard(torrent: Torrent, modifier: Modifier = Modifier) {
+fun TorrentDashboard(torrent: Torrent, onClose: () -> Unit, modifier: Modifier = Modifier) {
     var selectedTabIndex by remember { mutableStateOf(2) } // default to peers
     val tabs = listOf("General", "Trackers", "Peers", "Content")
 
     Column(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow)) {
-        PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(title) }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color.Transparent,
+                divider = {},
+                modifier = Modifier.padding(end = 48.dp) // Leave space for the close button
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) }
+                    )
+                }
+            }
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = AppIcons.Close,
+                    contentDescription = "Close details",
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
