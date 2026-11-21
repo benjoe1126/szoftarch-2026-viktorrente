@@ -30,18 +30,18 @@ VALUES
 ("mustar", 27, 1, "hashnigga", 0, "mustar.piece");
 
 fillPeers:
-INSERT INTO Peers (address, torrent_hash)
+INSERT INTO Peers (id_hash, address, torrent_hash)
 VALUES
-("idf.hu", "hashnigga"),
-("sussy.hu", "hashnigga"),
-("amogus.hu","hashnigga");
+("idf","idf.hu", "hashnigga"),
+("sussy","sussy.hu", "hashnigga"),
+("amogus","amogus.hu","hashnigga");
 
 fillPeerHasPiece:
-INSERT INTO PeerHasPiece (torrent_hash, peer_address, piece_number)
+INSERT INTO PeerHasPiece (torrent_hash, peer_id_hash, piece_number)
 VALUES
-("hashnigga", "idf.hu", 0),
-("hashnigga", "idf.hu", 1),
-("hashnigga", "sussy.hu",1);
+("hashnigga", "idf", 0),
+("hashnigga", "idf", 1),
+("hashnigga", "sussy",1);
 
 affectedRows:
 SELECT changes();

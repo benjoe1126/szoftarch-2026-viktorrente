@@ -105,11 +105,11 @@ class TorrentRepositoryTest {
     fun testGetPiecesByPeer()
     {
         val tr=prepareTest();
-        val result=tr.getPiecesByPeer(PeerId(TorrentId("hashnigga"),"idf.hu"));
+        val result=tr.getPiecesByPeer(PeerId(TorrentId("hashnigga"),"idf"));
         assertEquals(2, result.size);
         assert(result[0].hash.equals("globus") || result[1].hash.equals("globus"));
         assert(result[0].hash.equals("mustar") || result[1].hash.equals("mustar"));
-        val result2=tr.getPiecesByPeer(PeerId(TorrentId("hashnigga"),"amogus.hu"));
+        val result2=tr.getPiecesByPeer(PeerId(TorrentId("hashnigga"),"amogus"));
         assertEquals(0, result2.size);
     }
 
@@ -154,9 +154,9 @@ class TorrentRepositoryTest {
     fun testGetPeerById()
     {
         val tr=prepareTest();
-        val result=tr.getPeerById(PeerId(TorrentId("hashnigga"), "idf.hu"));
+        val result=tr.getPeerById(PeerId(TorrentId("hashnigga"), "idf"));
         assertEquals("idf.hu", result?.address);
-        val result2=tr.getPeerById(PeerId(TorrentId("hashnigga"), "grindr.com"));
+        val result2=tr.getPeerById(PeerId(TorrentId("hashnigga"), "grindr"));
         assertEquals(null, result2);
     }
 
@@ -165,9 +165,9 @@ class TorrentRepositoryTest {
     {
         val tr=prepareTest();
         val result=tr.getPeerArray(listOf(
-            PeerId(TorrentId("hashnigga"),"idf.hu"),
-            PeerId(TorrentId("hashnigga"),"amogus.hu"),
-            PeerId(TorrentId("hashnigga67"),"idf.hu")
+            PeerId(TorrentId("hashnigga"),"idf"),
+            PeerId(TorrentId("hashnigga"),"amogus"),
+            PeerId(TorrentId("hashnigga67"),"idf")
         ));
         assertEquals(3, result.size);
         assertEquals("idf.hu", result[0]?.address);
@@ -296,12 +296,12 @@ class TorrentRepositoryTest {
     fun testInsertPeer()
     {
         val tr=prepareTest();
-        val peerIdValid=PeerId(TorrentId("hashnigga"), "parkside.il");
-        val peerIdInvalid=PeerId(TorrentId("hashnigga67"), "kongstrong.il");
-        val peerValid= PeerInfo(peerIdValid.torrent, peerIdValid.address);
-        val peerInvalid= PeerInfo(peerIdInvalid.torrent,peerIdInvalid.address);
+        val peerIdValid=PeerId(TorrentId("hashnigga"), "parkside");
+        val peerIdInvalid=PeerId(TorrentId("hashnigga67"), "kongstrong");
+        val peerValid= PeerInfo(peerIdValid.torrent, peerIdValid.idHash, "parkside.il");
+        val peerInvalid= PeerInfo(peerIdInvalid.torrent,peerIdInvalid.idHash, "kongstrong.il");
         assertTrue(tr.insertPeer(peerValid));
-        assertEquals(peerIdValid.address, tr.getPeerById(peerIdValid)?.address);
+        assertEquals(peerIdValid.idHash, tr.getPeerById(peerIdValid)?.idHash);
         assertFalse(tr.insertPeer(peerInvalid));
         assertNull(tr.getPeerById(peerIdInvalid));
     }
@@ -321,8 +321,8 @@ class TorrentRepositoryTest {
             PieceInfo(torrent.getId(),1, "bigyahu", 67,  PieceStatus.entries[0], "bigyahu.piece")
         );
         val peersValid=listOf<PeerInfo>(
-            PeerInfo(torrent.getId(), "chatgps.hu"),
-            PeerInfo(torrent.getId(), "kms.hu")
+            PeerInfo(torrent.getId(), "chatgps","chatgps.hu"),
+            PeerInfo(torrent.getId(), "kms","kms.hu")
         );
 
         assertTrue(tr.insertTorrentFullData(torrent, piecesValid, filesValid, peersValid));
@@ -337,8 +337,8 @@ class TorrentRepositoryTest {
     fun testInsertPeerOffering()
     {
         val tr=prepareTest();
-        val peerValid=PeerId(TorrentId("hashnigga"), "sussy.hu");
-        val peerInvalid=PeerId(TorrentId("hashnigga67"), "idf.hu");
+        val peerValid=PeerId(TorrentId("hashnigga"), "sussy");
+        val peerInvalid=PeerId(TorrentId("hashnigga67"), "idf");
         val pieceValid=PieceId(TorrentId("hashnigga"),0);
         val pieceInvalid=PieceId(TorrentId("hashnigga67"),0);
         assertTrue(tr.insertPeerOffering(peerValid,pieceValid));
@@ -383,7 +383,7 @@ class TorrentRepositoryTest {
     fun testUpdatePeerPieceOffering()
     {
         val tr=prepareTest();
-        val peer=PeerId(TorrentId("hashnigga"),"idf.hu");
+        val peer=PeerId(TorrentId("hashnigga"),"idf");
         val piecesValid=listOf<PieceId>(
             PieceId(TorrentId("hashnigga"),0)
         );

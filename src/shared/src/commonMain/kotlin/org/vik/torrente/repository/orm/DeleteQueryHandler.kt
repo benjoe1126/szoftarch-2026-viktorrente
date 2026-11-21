@@ -59,7 +59,7 @@ fun TorrentRepository.deletePeer(peer:PeerId):Boolean{
             {
                 if(!deletePeerPieceOffers(peer))
                     throw Exception();
-                db.deleteQueries.deletePeerByPeerId(peer.torrent.hash, peer.address);
+                db.deleteQueries.deletePeerByPeerId(peer.torrent.hash, peer.idHash);
             }
         }
     }.isSuccess;
@@ -68,7 +68,7 @@ fun TorrentRepository.deletePeer(peer:PeerId):Boolean{
 //deletes the entries containing an offering of the peer regarding a piece
 fun TorrentRepository.deletePeerPieceOffers(peer:PeerId):Boolean{
     return runCatching{
-        db.deleteQueries.deletePhpByPeerId(peer.torrent.hash, peer.address);
+        db.deleteQueries.deletePhpByPeerId(peer.torrent.hash, peer.idHash);
     }.isSuccess;
 }
 

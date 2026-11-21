@@ -12,7 +12,7 @@ WHERE torrent_hash=:torrent_hash AND number=:number;
 
 deletePeerByPeerId:
 DELETE FROM Peers
-WHERE torrent_hash=:torrent_hash AND address=:address;
+WHERE torrent_hash=:torrent_hash AND id_hash=:id_hash;
 
 deletePhpByTorrentId:
 DELETE FROM PeerHasPiece
@@ -24,4 +24,4 @@ WHERE torrent_hash=:torrent_hash AND piece_number=:number;
 
 deletePhpByPeerId:
 DELETE FROM PeerHasPiece
-WHERE torrent_hash=:torrent_hash AND peer_address=:address;
+WHERE torrent_hash=:torrent_hash AND peer_id_hash=:id_hash;

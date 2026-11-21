@@ -25,7 +25,7 @@ WHERE torrent_hash=:torrent_hash;
 queryPiecesByPeer:
 SELECT Pieces.hash AS hash, Pieces.length AS length, Pieces.number AS number, Pieces.status AS status, Pieces.download_path AS download_path, Pieces.torrent_hash AS torrent_hash
 FROM Pieces INNER JOIN PeerHasPiece ON (Pieces.torrent_hash=PeerHasPiece.torrent_hash AND Pieces.number = PeerHasPiece.piece_number)
-WHERE (PeerHasPiece.torrent_hash=:torrent_hash AND PeerHasPiece.peer_address=:peer_address);
+WHERE (PeerHasPiece.torrent_hash=:torrent_hash AND PeerHasPiece.peer_id_hash=:id_hash);
 
 
 queryFileById:
@@ -41,14 +41,14 @@ WHERE torrent_hash=:torrent_hash;
 queryPeerById:
 SELECT *
 FROM Peers
-WHERE address = :peer_address AND torrent_hash = :torrent_hash;
+WHERE id_hash = :id_hash AND torrent_hash = :torrent_hash;
 
 queryPeersByPiece:
-SELECT Peers.address AS address, Peers.torrent_hash AS torrent_hash
-FROM Peers INNER JOIN PeerHasPiece ON (Peers.address=PeerHasPiece.peer_address AND Peers.torrent_hash=PeerHasPiece.torrent_hash)
+SELECT Peers.address AS address, Peers.id_hash AS id_hash, Peers.torrent_hash AS torrent_hash
+FROM Peers INNER JOIN PeerHasPiece ON (Peers.id_hash=PeerHasPiece.peer_id_hash AND Peers.torrent_hash=PeerHasPiece.torrent_hash)
 WHERE PeerHasPiece.torrent_hash=:torrent_hash AND PeerHasPiece.piece_number=:piece_number;
 
 queryPeersByTorrent:
-SELECT address, torrent_hash
+SELECT address, id_hash, torrent_hash
 FROM Peers
 WHERE torrent_hash=:torrent_hash;

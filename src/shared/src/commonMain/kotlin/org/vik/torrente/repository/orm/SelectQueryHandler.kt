@@ -60,7 +60,7 @@ fun TorrentRepository.getPiecesByTorrent(torrent:TorrentId):List<PieceInfo>{
 }
 
 fun TorrentRepository.getPiecesByPeer(peer:PeerId):List<PieceInfo>{
-    return db.selectQueries.queryPiecesByPeer(peer.torrent.hash, peer.address).executeAsList().map{
+    return db.selectQueries.queryPiecesByPeer(peer.torrent.hash, peer.idHash).executeAsList().map{
             piece ->
         PieceInfo(TorrentId(piece.torrent_hash), piece.number, piece.hash, piece.length,  PieceStatus.entries[piece.status.toInt()], piece.download_path)
     }
@@ -95,9 +95,9 @@ fun TorrentRepository.getFilesByTorrent(torrent:TorrentId):List<FileInfo>{
 }
 
 fun TorrentRepository.getPeerById(peer : PeerId) : PeerInfo? {
-    val result=db.selectQueries.queryPeerById(peer.address, peer.torrent.hash).executeAsOneOrNull();
+    val result=db.selectQueries.queryPeerById(peer.idHash, peer.torrent.hash).executeAsOneOrNull();
     return if(result!=null)
-        PeerInfo(TorrentId(result.torrent_hash), result.address);
+        PeerInfo(TorrentId(result.torrent_hash),result.id_hash, result.address);
     else null;
 }
 
@@ -114,13 +114,13 @@ fun TorrentRepository.getPeerArray(peers:List<PeerId>):List<PeerInfo?> {
 fun TorrentRepository.getPeersByPiece(piece:PieceId) : List<PeerInfo> {
     return db.selectQueries.queryPeersByPiece(piece.torrent.hash, piece.number).executeAsList().map{
             peer ->
-        PeerInfo(TorrentId(peer.torrent_hash),peer.address);
+        PeerInfo(TorrentId(peer.torrent_hash),peer.id_hash,peer.address);
     };
 }
 
 fun TorrentRepository.getPeersByTorrent(torrent:TorrentId) : List<PeerInfo> {
     return db.selectQueries.queryPeersByTorrent(torrent.hash).executeAsList().map{
             peer ->
-        PeerInfo(TorrentId(peer.torrent_hash),peer.address);
+        PeerInfo(TorrentId(peer.torrent_hash),peer.id_hash,peer.address);
     };
 }

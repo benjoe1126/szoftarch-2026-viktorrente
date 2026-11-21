@@ -28,17 +28,18 @@ CREATE TABLE IF NOT EXISTS Pieces(
 
 CREATE TABLE IF NOT EXISTS Peers(
     address TEXT NOT NULL,
+    id_hash TEXT NOT NULL,
     torrent_hash TEXT NOT NULL,
-    PRIMARY KEY(address, torrent_hash),
+    PRIMARY KEY(id_hash, torrent_hash),
     CONSTRAINT fk_torrent FOREIGN KEY(torrent_hash) REFERENCES Torrents(hash)
 );
 
 CREATE TABLE IF NOT EXISTS PeerHasPiece(
-    peer_address TEXT NOT NULL,
+    peer_id_hash TEXT NOT NULL,
     piece_number INTEGER NOT NULL,
     torrent_hash TEXT NOT NULL,
-    PRIMARY KEY (peer_address, piece_number, torrent_hash),
-    CONSTRAINT fk_peer FOREIGN KEY (peer_address, torrent_hash) REFERENCES Peers(address, torrent_hash),
+    PRIMARY KEY (peer_id_hash, piece_number, torrent_hash),
+    CONSTRAINT fk_peer FOREIGN KEY (peer_id_hash, torrent_hash) REFERENCES Peers(id_hash, torrent_hash),
     CONSTRAINT fk_piece FOREIGN KEY (piece_number, torrent_hash) REFERENCES Pieces(number, torrent_hash),
     CONSTRAINT fk_torrent FOREIGN KEY(torrent_hash) REFERENCES Torrents(hash)
 );

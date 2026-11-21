@@ -19,7 +19,7 @@ fun TorrentRepository.insertPiece(piece:PieceInfo):Boolean{
 }
 
 fun TorrentRepository.insertPeer(peer:PeerInfo):Boolean{
-    return runCatching{db.insertQueries.insertPeer(peer.address, peer.torrent.hash)}.isSuccess;
+    return runCatching{db.insertQueries.insertPeer(peer.address,peer.idHash, peer.torrent.hash)}.isSuccess;
 }
 
 /*
@@ -61,7 +61,7 @@ fun TorrentRepository.insertPeerOffering(peer:PeerId, piece:PieceId):Boolean {
         return false;
 
     return runCatching { db.transactionWithResult {
-        db.insertQueries.insertPeerOffering(peer.torrent.hash, peer.address, piece.number);
+        db.insertQueries.insertPeerOffering(peer.torrent.hash, peer.idHash, piece.number);
         if(db.insertQueries.affectedRows().executeAsOne().toInt()!=1)
             throw Exception();
     }}.isSuccess;
