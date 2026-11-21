@@ -63,40 +63,6 @@ fun TorrentItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var showAddPeerDialog by remember { mutableStateOf(false) }
-    var peerIpAndPort by remember { mutableStateOf("") }
-    
-    if (showAddPeerDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddPeerDialog = false },
-            title = { Text("Add Peer") },
-            text = {
-                OutlinedTextField(
-                    value = peerIpAndPort,
-                    onValueChange = { peerIpAndPort = it },
-                    label = { Text("IP:PORT") },
-                    singleLine = true
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onAddPeer(torrent.id, peerIpAndPort)
-                        showAddPeerDialog = false
-                    },
-                    enabled = peerIpAndPort.isNotBlank()
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddPeerDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
@@ -174,7 +140,7 @@ fun TorrentItemCard(
                     )
                 }
 
-                Box {
+                /*Box {
                     IconButton(
                         onClick = { expanded = true },
                         modifier = Modifier.size(40.dp)
@@ -185,7 +151,7 @@ fun TorrentItemCard(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    DropdownMenu(
+                    /*DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
@@ -204,8 +170,8 @@ fun TorrentItemCard(
                                 showAddPeerDialog = true
                             }
                         )
-                    }
-                }
+                    }*/
+                }*/
             }
 
             Spacer(modifier = Modifier.width(16.dp))
