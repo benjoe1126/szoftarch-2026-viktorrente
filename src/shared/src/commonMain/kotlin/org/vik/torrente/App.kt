@@ -22,6 +22,11 @@ import org.vik.torrente.service.TorrentService
 import org.vik.torrente.ui.components.AddTorrentDialog
 import org.vik.torrente.ui.components.TopBar
 import org.vik.torrente.ui.components.TorrentList
+import org.vik.torrente.ui.components.TorrentDashboard
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerType
 
@@ -44,6 +49,7 @@ fun App(
         val torrents by torrentService.torrents.collectAsState()
         val coroutineScope = rememberCoroutineScope()
         var pendingTorrent by remember { mutableStateOf<ParsedTorrentInfo?>(null) }
+        var selectedTorrentId by remember { mutableStateOf<String?>(null) }
 
         val torrentFilePicker = rememberFilePickerLauncher(
             type = PickerType.File(extensions = listOf("torrent")),
@@ -71,18 +77,35 @@ fun App(
                 )
             }
         ) { innerPadding ->
-            TorrentList(
-                torrents = torrents,
-                onTogglePlayPause = { id -> torrentService.togglePlayPause(id) },
-                onDelete = { id -> torrentService.deleteTorrent(id) },
-                onOpenFolder = { path -> onOpenDirectory(path) },
-                onReannounce = { id -> torrentService.reannounce(id) },
-                onAddPeer = { id, peer -> torrentService.addPeer(id, peer) },
-                onAddTorrentClick = {
-                    torrentFilePicker.launch()
-                },
-                modifier = Modifier.padding(innerPadding)
-            )
+            Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                TorrentList(
+                    torrents = torrents,
+                    onTogglePlayPause = { id -> torrentService.togglePlayPause(id) },
+                    onDelete = { id -> 
+                        torrentService.deleteTorrent(id)
+                        if (selectedTorrentId == id) selectedTorrentId = null 
+                    },
+                    onOpenFolder = { path -> onOpenDirectory(path) },
+                    onReannounce = { id -> torrentService.reannounce(id) },
+                    onAddPeer = { id, peer -> torrentService.addPeer(id, peer) },
+                    onTorrentSelected = { id -> selectedTorrentId = id },
+                    onAddTorrentClick = {
+                        torrentFilePicker.launch()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                selectedTorrentId?.let { id ->
+                    val selectedTorrent = torrents.find { it.id == id }
+                    if (selectedTorrent != null) {
+                        HorizontalDivider()
+                        TorrentDashboard(
+                            torrent = selectedTorrent,
+                            modifier = Modifier.height(300.dp)
+                        )
+                    }
+                }
+            }
 
             // Add Torrent Dialog (activated when a .torrent file is picked)
             pendingTorrent?.let { parsedInfo ->

@@ -60,6 +60,7 @@ fun TorrentItemCard(
     onOpenFolder: (String) -> Unit,
     onReannounce: (String) -> Unit,
     onAddPeer: (String, String) -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -101,7 +102,8 @@ fun TorrentItemCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier

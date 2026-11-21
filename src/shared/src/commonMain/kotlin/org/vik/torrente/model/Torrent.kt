@@ -31,6 +31,27 @@ data class TorrentFile(
 )
 
 /**
+ * Represents a connected peer for a torrent.
+ */
+data class Peer(
+    val ipAddress: String,
+    val port: Int,
+    val client: String,
+    val downloadSpeed: Long, // bytes/sec
+    val uploadSpeed: Long,   // bytes/sec
+    val progress: Float      // 0.0 to 1.0
+)
+
+/**
+ * Represents a tracker for a torrent.
+ */
+data class Tracker(
+    val url: String,
+    val status: String,
+    val peers: Int
+)
+
+/**
  * Represents an active or paused torrent task displayed in the UI.
  */
 data class Torrent(
@@ -43,6 +64,8 @@ data class Torrent(
     val status: TorrentStatus,
     val destinationPath: String,
     val peers: Int = 0,
+    val peerList: List<Peer> = emptyList(),
+    val trackers: List<Tracker> = emptyList(),
     val files: List<TorrentFile> = emptyList()
 ) {
     val progress: Float

@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.vik.torrente.model.ParsedTorrentInfo
+import org.vik.torrente.model.Peer
+import org.vik.torrente.model.Tracker
 import org.vik.torrente.model.Torrent
 import org.vik.torrente.model.TorrentFile
 import org.vik.torrente.model.TorrentMode
@@ -26,6 +28,23 @@ class MockTorrentService(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    private fun generatePeers(count: Int): List<Peer> = (1..count).map {
+        Peer(
+            ipAddress = "${Random.nextInt(1, 255)}.${Random.nextInt(0, 255)}.${Random.nextInt(0, 255)}.${Random.nextInt(1, 255)}",
+            port = Random.nextInt(1024, 65535),
+            client = "-vT0001-" + (1..12).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
+            downloadSpeed = Random.nextLong(0, 150_000),
+            uploadSpeed = Random.nextLong(0, 50_000),
+            progress = Random.nextFloat()
+        )
+    }
+
+    private val defaultTrackers = listOf(
+        Tracker("udp://tracker.opentrackr.org:1337/announce", "Working", 42),
+        Tracker("udp://9.rarbg.com:2810/announce", "Working", 12),
+        Tracker("http://tracker.openbittorrent.com:80/announce", "Updating...", 0)
+    )
+
     private val _torrents = MutableStateFlow<List<Torrent>>(
         listOf(
             Torrent(
@@ -38,6 +57,8 @@ class MockTorrentService(
                 status = TorrentStatus.DOWNLOADING,
                 destinationPath = defaultDownloadPath,
                 peers = 42,
+                peerList = generatePeers(42),
+                trackers = defaultTrackers,
                 files = listOf(
                     TorrentFile("f1", "ubuntu-24.04-desktop-amd64.iso", 6_104_743_936L, true)
                 )
@@ -52,6 +73,8 @@ class MockTorrentService(
                 status = TorrentStatus.SEEDING,
                 destinationPath = defaultDownloadPath,
                 peers = 128,
+                peerList = generatePeers(128),
+                trackers = defaultTrackers,
                 files = listOf(
                     TorrentFile("f2_1", "big_buck_bunny_1080p_surround.avi", 850_000_000L, true),
                     TorrentFile("f2_2", "poster.jpg", 25_000_000L, true),
@@ -68,6 +91,8 @@ class MockTorrentService(
                 status = TorrentStatus.PAUSED,
                 destinationPath = defaultDownloadPath,
                 peers = 0,
+                peerList = emptyList(),
+                trackers = defaultTrackers,
                 files = listOf(
                     TorrentFile("f3_1", "debian-12.5.0-amd64-netinst.iso", 734_000_000L, true)
                 )
@@ -92,22 +117,40 @@ class MockTorrentService(
                         val newDownloaded = (torrent.downloadedBytes + jitteredSpeed).coerceAtMost(torrent.totalBytes)
                         val isNowFinished = newDownloaded >= torrent.totalBytes
 
-                        val newPeers = (torrent.peers + (-2..2).random()).coerceAtLeast(1).coerceAtMost(200)
+                        val peerTarget = (torrent.peers + (-2..2).random()).coerceAtLeast(1).coerceAtMost(200)
+                        val newPeers = if (peerTarget > torrent.peers) {
+                            torrent.peerList + generatePeers(peerTarget - torrent.peers)
+                        } else {
+                            torrent.peerList.take(peerTarget)
+                        }.map { it.copy(
+                            downloadSpeed = Random.nextLong(0, 150_000),
+                            uploadSpeed = Random.nextLong(0, 50_000)
+                        ) }
 
                         torrent.copy(
                             downloadedBytes = newDownloaded,
                             downloadSpeedBytesPerSec = if (isNowFinished) 0L else jitteredSpeed,
                             status = if (isNowFinished) TorrentStatus.SEEDING else TorrentStatus.DOWNLOADING,
-                            peers = newPeers
+                            peers = peerTarget,
+                            peerList = newPeers
                         )
                     } else if (torrent.status == TorrentStatus.SEEDING) {
                         // Fluctuate upload speed slightly
                         val jitteredUploadSpeed = (100_000L..800_000L).random()
-                        val newPeers = (torrent.peers + (-1..1).random()).coerceAtLeast(1).coerceAtMost(200)
+                        val peerTarget = (torrent.peers + (-1..1).random()).coerceAtLeast(1).coerceAtMost(200)
+                        val newPeers = if (peerTarget > torrent.peers) {
+                            torrent.peerList + generatePeers(peerTarget - torrent.peers)
+                        } else {
+                            torrent.peerList.take(peerTarget)
+                        }.map { it.copy(
+                            uploadSpeed = Random.nextLong(0, 150_000),
+                            downloadSpeed = 0L
+                        ) }
                         
                         torrent.copy(
                             uploadSpeedBytesPerSec = jitteredUploadSpeed,
-                            peers = newPeers
+                            peers = peerTarget,
+                            peerList = newPeers
                         )
                     } else {
                         torrent
@@ -170,6 +213,8 @@ class MockTorrentService(
             status = TorrentStatus.DOWNLOADING,
             destinationPath = destinationPath,
             peers = Random.nextInt(5, 50),
+            peerList = generatePeers(Random.nextInt(5, 50)),
+            trackers = defaultTrackers,
             files = selectedFiles
         )
 
@@ -224,7 +269,8 @@ class MockTorrentService(
                 if (torrent.id == torrentId && torrent.status == TorrentStatus.STARTING) {
                     torrent.copy(
                         status = if (torrent.isFinished) TorrentStatus.SEEDING else TorrentStatus.DOWNLOADING,
-                        peers = torrent.peers + Random.nextInt(1, 15)
+                        peers = torrent.peers + Random.nextInt(1, 15),
+                        peerList = torrent.peerList + generatePeers(Random.nextInt(1, 15))
                     )
                 } else {
                     torrent
@@ -237,7 +283,12 @@ class MockTorrentService(
         // Mock add peer
         _torrents.value = _torrents.value.map { torrent ->
             if (torrent.id == torrentId) {
-                torrent.copy(peers = torrent.peers + 1)
+                torrent.copy(
+                    peers = torrent.peers + 1,
+                    peerList = torrent.peerList + generatePeers(1).map { 
+                        it.copy(ipAddress = peerIpAndPort.substringBefore(":"), port = peerIpAndPort.substringAfter(":").toIntOrNull() ?: 6881) 
+                    }
+                )
             } else {
                 torrent
             }
