@@ -1,22 +1,22 @@
 insertTorrent:
-INSERT INTO Torrents (name, tracker, length)
-VALUES (:name,:tracker,:length);
+INSERT INTO Torrents (hash, name, tracker, length, status)
+VALUES (:hash, :name,:tracker,:length,:status);
 
 insertPiece:
-INSERT INTO Pieces (hash, length, torrent_id, number, status, download_path)
-VALUES (:hash, :length, :torrent_id, :number, :status, :download_path);
+INSERT INTO Pieces (hash, length, torrent_hash, number, status, download_path)
+VALUES (:hash, :length, :torrent_hash, :number, :status, :download_path);
 
 insertFile:
-INSERT INTO Files (name, length, torrent_id, number)
-VALUES (:name, :length, :torrent_id, :number);
+INSERT INTO Files (name, length, torrent_hash, number)
+VALUES (:name, :length, :torrent_hash, :number);
 
 insertPeer:
-INSERT INTO Peers (address, torrent_id)
-VALUES (:address, :torrent_id);
+INSERT INTO Peers (address, torrent_hash)
+VALUES (:address, :torrent_hash);
 
 insertPeerOffering:
-INSERT INTO PeerHasPiece (torrent_id, peer_address, piece_number)
-VALUES (:torrent_id, :peer_address, :piece_number);
+INSERT INTO PeerHasPiece (torrent_hash, peer_address, piece_number)
+VALUES (:torrent_hash, :peer_address, :piece_number);
 
 affectedRows:
 SELECT changes();

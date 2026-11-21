@@ -1,18 +1,29 @@
 package org.vik.torrente.repository.models
 
-data class TorrentId(
-    val id: Long
-)
-{
-    companion object{
-        val PLACEHOLDER = TorrentId(-1);
-    }
-}
+enum class TorrentStatus {
+    CHECKING,
+    STARTING,
+    DOWNLOADING,
+    SEEDING,
+    PAUSED,
+    COMPLETED,
+    STOPPED,
+    ERROR
+};
 
+data class TorrentId(
+    val hash : String
+);
 
 data class TorrentInfo(
-    val id: TorrentId,
+    val hash: String,
     val tracker: String,
     val name: String,
-    val length: Long
+    val length: Long,
+    val status: TorrentStatus
 )
+{
+    fun getId() : TorrentId {
+        return TorrentId(hash);
+    }
+}

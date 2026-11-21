@@ -10,6 +10,7 @@ import org.vik.torrente.repository.models.PieceInfo
 import org.vik.torrente.repository.models.PieceStatus
 import org.vik.torrente.repository.models.TorrentId
 import org.vik.torrente.repository.models.TorrentInfo
+import org.vik.torrente.repository.models.TorrentStatus
 import org.vik.torrente.repository.orm.*
 import kotlin.test.Test
 import kotlin.test.*
@@ -47,9 +48,9 @@ class TorrentRepositoryTest {
     fun testGetTorrentById()
     {
         val tr=prepareTest();
-        val result=tr.getTorrentById(TorrentId(1));
+        val result=tr.getTorrentById(TorrentId("hashnigga"));
         assertEquals("nigga.org", result?.tracker);
-        val result2=tr.getTorrentById(TorrentId(2));
+        val result2=tr.getTorrentById(TorrentId("hashnigga67"));
         assertEquals(null, result2);
     }
 
@@ -67,9 +68,9 @@ class TorrentRepositoryTest {
     fun testGetPieceById()
     {
         val tr=prepareTest();
-        val result=tr.getPieceById(PieceId(TorrentId(1),0));
+        val result=tr.getPieceById(PieceId(TorrentId("hashnigga"),0));
         assertEquals("globus", result?.hash);
-        val result2=tr.getPieceById(PieceId(TorrentId(67),0));
+        val result2=tr.getPieceById(PieceId(TorrentId("hashnigga67"),0));
         assertEquals(null, result2);
     }
 
@@ -78,9 +79,9 @@ class TorrentRepositoryTest {
     {
         val tr=prepareTest();
         val result=tr.getPieceArray(listOf(
-            PieceId(TorrentId(1),0),
-            PieceId(TorrentId(1),1),
-            PieceId(TorrentId(67),0)
+            PieceId(TorrentId("hashnigga"),0),
+            PieceId(TorrentId("hashnigga"),1),
+            PieceId(TorrentId("hashnigga67"),0)
         ));
         assertEquals(3, result.size);
         assertEquals("globus", result[0]?.hash);
@@ -92,11 +93,11 @@ class TorrentRepositoryTest {
     fun testGetPiecesByTorrent()
     {
         val tr=prepareTest();
-        val result=tr.getPiecesByTorrent(TorrentId(1));
+        val result=tr.getPiecesByTorrent(TorrentId("hashnigga"));
         assertEquals(2, result.size);
         assert(result[0].hash.equals("globus") || result[1].hash.equals("globus"));
         assert(result[0].hash.equals("mustar") || result[1].hash.equals("mustar"));
-        val result2=tr.getPiecesByTorrent(TorrentId(67));
+        val result2=tr.getPiecesByTorrent(TorrentId("hashnigga67"));
         assertEquals(0, result2.size);
     }
 
@@ -104,11 +105,11 @@ class TorrentRepositoryTest {
     fun testGetPiecesByPeer()
     {
         val tr=prepareTest();
-        val result=tr.getPiecesByPeer(PeerId(TorrentId(1),"idf.hu"));
+        val result=tr.getPiecesByPeer(PeerId(TorrentId("hashnigga"),"idf.hu"));
         assertEquals(2, result.size);
         assert(result[0].hash.equals("globus") || result[1].hash.equals("globus"));
         assert(result[0].hash.equals("mustar") || result[1].hash.equals("mustar"));
-        val result2=tr.getPiecesByPeer(PeerId(TorrentId(1),"amogus.hu"));
+        val result2=tr.getPiecesByPeer(PeerId(TorrentId("hashnigga"),"amogus.hu"));
         assertEquals(0, result2.size);
     }
 
@@ -116,9 +117,9 @@ class TorrentRepositoryTest {
     fun testGetFileById()
     {
         val tr=prepareTest();
-        val result=tr.getFileById(FileId(TorrentId(1), 1));
+        val result=tr.getFileById(FileId(TorrentId("hashnigga"), 1));
         assertEquals("chungus.txt", result?.name);
-        val result2=tr.getFileById(FileId(TorrentId(1), 67));
+        val result2=tr.getFileById(FileId(TorrentId("hashnigga"), 67));
         assertEquals(null, result2);
     }
 
@@ -127,9 +128,9 @@ class TorrentRepositoryTest {
     {
         val tr=prepareTest();
         val result=tr.getFileArray(listOf(
-            FileId(TorrentId(1),0),
-            FileId(TorrentId(1),1),
-            FileId(TorrentId(67),0)
+            FileId(TorrentId("hashnigga"),0),
+            FileId(TorrentId("hashnigga"),1),
+            FileId(TorrentId("hashnigga67"),0)
         ));
         assertEquals(3, result.size);
         assertEquals("big.txt", result[0]?.name);
@@ -141,11 +142,11 @@ class TorrentRepositoryTest {
     fun testGetFilesByTorrent()
     {
         val tr=prepareTest();
-        val result=tr.getFilesByTorrent(TorrentId(1));
+        val result=tr.getFilesByTorrent(TorrentId("hashnigga"));
         assertEquals(2, result.size);
         assert(result[0].name.equals("big.txt") || result[1].name.equals("big.txt"));
         assert(result[0].name.equals("chungus.txt") || result[1].name.equals("chungus.txt"));
-        val result2=tr.getFilesByTorrent(TorrentId(67));
+        val result2=tr.getFilesByTorrent(TorrentId("hashnigga67"));
         assertEquals(0, result2.size);
     }
 
@@ -153,9 +154,9 @@ class TorrentRepositoryTest {
     fun testGetPeerById()
     {
         val tr=prepareTest();
-        val result=tr.getPeerById(PeerId(TorrentId(1), "idf.hu"));
+        val result=tr.getPeerById(PeerId(TorrentId("hashnigga"), "idf.hu"));
         assertEquals("idf.hu", result?.address);
-        val result2=tr.getPeerById(PeerId(TorrentId(1), "grindr.com"));
+        val result2=tr.getPeerById(PeerId(TorrentId("hashnigga"), "grindr.com"));
         assertEquals(null, result2);
     }
 
@@ -164,9 +165,9 @@ class TorrentRepositoryTest {
     {
         val tr=prepareTest();
         val result=tr.getPeerArray(listOf(
-            PeerId(TorrentId(1),"idf.hu"),
-            PeerId(TorrentId(1),"amogus.hu"),
-            PeerId(TorrentId(67),"idf.hu")
+            PeerId(TorrentId("hashnigga"),"idf.hu"),
+            PeerId(TorrentId("hashnigga"),"amogus.hu"),
+            PeerId(TorrentId("hashnigga67"),"idf.hu")
         ));
         assertEquals(3, result.size);
         assertEquals("idf.hu", result[0]?.address);
@@ -178,10 +179,10 @@ class TorrentRepositoryTest {
     fun testGetPeersByPiece()
     {
         val tr=prepareTest();
-        val result=tr.getPeersByPiece(PieceId(TorrentId(1),0));
+        val result=tr.getPeersByPiece(PieceId(TorrentId("hashnigga"),0));
         assertEquals(1, result.size);
         assert(result[0].address.equals("idf.hu"));
-        val result2=tr.getPeersByPiece(PieceId(TorrentId(1),67));
+        val result2=tr.getPeersByPiece(PieceId(TorrentId("hashnigga"),67));
         assertEquals(0, result2.size);
     }
 
@@ -189,12 +190,12 @@ class TorrentRepositoryTest {
     fun testGetPeersByTorrent()
     {
         val tr=prepareTest();
-        val result=tr.getPeersByTorrent(TorrentId(1));
+        val result=tr.getPeersByTorrent(TorrentId("hashnigga"));
         assertEquals(3, result.size);
         assert(result.any { it.address.equals("idf.hu") });
         assert(result.any { it.address.equals("sussy.hu") });
         assert(result.any { it.address.equals("amogus.hu") });
-        val result2=tr.getPeersByTorrent(TorrentId(67));
+        val result2=tr.getPeersByTorrent(TorrentId("hashnigga67"));
         assertEquals(0, result2.size);
     }
 
@@ -202,18 +203,18 @@ class TorrentRepositoryTest {
     fun testDeleteTorrent()
     {
         val tr=prepareTest();
-        assertTrue(tr.deleteTorrent(TorrentId(1)));
+        assertTrue(tr.deleteTorrent(TorrentId("hashnigga")));
         assertEquals(0, tr.getTorrents().size);
-        assertEquals(0, tr.getFilesByTorrent(TorrentId(1)).size);
-        assertEquals(0, tr.getPiecesByTorrent(TorrentId(1)).size);
-        assertEquals(0, tr.getPeersByTorrent(TorrentId(1)).size);
+        assertEquals(0, tr.getFilesByTorrent(TorrentId("hashnigga")).size);
+        assertEquals(0, tr.getPiecesByTorrent(TorrentId("hashnigga")).size);
+        assertEquals(0, tr.getPeersByTorrent(TorrentId("hashnigga")).size);
     }
 
     @Test
     fun testDeleteFile()
     {
         val tr=prepareTest();
-        val file=FileId(TorrentId(1), 0);
+        val file=FileId(TorrentId("hashnigga"), 0);
         assertTrue(tr.deleteFile(file));
         assertNull(tr.getFileById(file));
     }
@@ -222,7 +223,7 @@ class TorrentRepositoryTest {
     fun testDeletePiece()
     {
         val tr=prepareTest();
-        val piece=PieceId(TorrentId(1), 0);
+        val piece=PieceId(TorrentId("hashnigga"), 0);
         assertTrue(tr.deletePiece(piece));
         assertNull(tr.getPieceById(piece));
     }
@@ -231,7 +232,7 @@ class TorrentRepositoryTest {
     fun testDeletePeer()
     {
         val tr=prepareTest();
-        val peer=PeerId(TorrentId(1), "idf.hu");
+        val peer=PeerId(TorrentId("hashnigga"), "idf.hu");
         assertTrue(tr.deletePeer(peer));
         assertNull(tr.getPeerById(peer));
     }
@@ -240,7 +241,7 @@ class TorrentRepositoryTest {
     fun testDeletePeerPieceOffersByPeer()
     {
         val tr=prepareTest();
-        val peer=PeerId(TorrentId(1), "idf.hu");
+        val peer=PeerId(TorrentId("hashnigga"), "idf.hu");
         assertTrue(tr.deletePeerPieceOffers(peer));
         assertEquals(0, tr.getPiecesByPeer(peer).size);
     }
@@ -249,7 +250,7 @@ class TorrentRepositoryTest {
     fun testDeletePeerPieceOffersByPiece()
     {
         val tr=prepareTest();
-        val piece=PieceId(TorrentId(1), 1);
+        val piece=PieceId(TorrentId("hashnigga"), 1);
         assertTrue(tr.deletePeerPieceOffers(piece));
         assertEquals(0, tr.getPeersByPiece(piece).size);
     }
@@ -258,7 +259,7 @@ class TorrentRepositoryTest {
     fun testInsertTorrent()
     {
         val tr=prepareTest();
-        val torrent= TorrentInfo(TorrentId.PLACEHOLDER, "nav.gov.hu", "tax-free robux", 67);
+        val torrent= TorrentInfo("hashnigga67", "nav.gov.hu", "tax-free robux", 67, TorrentStatus.entries[0]);
         assertTrue(tr.insertTorrent(torrent));
         assertEquals(torrent.tracker, tr.getTorrentByName(torrent.name)?.tracker);
     }
@@ -267,10 +268,10 @@ class TorrentRepositoryTest {
     fun testInsertFile()
     {
         val tr=prepareTest();
-        val fileIdValid=FileId(TorrentId(1), 67);
-        val fileIdInvalid=FileId(TorrentId(67), 67);
-        val fileValid= FileInfo(FileId.PLACEHOLDER,"sus.amogus",67,fileIdValid.number,fileIdValid.torrent_id);
-        val fileInvalid= FileInfo(FileId.PLACEHOLDER,"2sus.2amogus",67,fileIdInvalid.number,fileIdInvalid.torrent_id);
+        val fileIdValid=FileId(TorrentId("hashnigga"), 67);
+        val fileIdInvalid=FileId(TorrentId("hashnigga67"), 67);
+        val fileValid= FileInfo(fileIdValid.torrent,fileIdValid.number,"sus.amogus",67);
+        val fileInvalid= FileInfo(fileIdInvalid.torrent,fileIdInvalid.number,"2sus.2amogus",67);
         assertTrue(tr.insertFile(fileValid));
         assertEquals("sus.amogus", tr.getFileById(fileIdValid)?.name);
         assertFalse(tr.insertFile(fileInvalid));
@@ -281,10 +282,10 @@ class TorrentRepositoryTest {
     fun testInsertPiece()
     {
         val tr=prepareTest();
-        val pieceIdValid=PieceId(TorrentId(1), 67);
-        val pieceIdInvalid=PieceId(TorrentId(67), 67);
-        val pieceValid= PieceInfo(PieceId.PLACEHOLDER,"batman",67,pieceIdValid.number, PieceStatus.entries[0], "batman.piece",pieceIdValid.torrent_id);
-        val pieceInvalid= PieceInfo(PieceId.PLACEHOLDER,"batnigga",67,pieceIdInvalid.number, PieceStatus.entries[0], "batnigga.piece",pieceIdInvalid.torrent_id);
+        val pieceIdValid=PieceId(TorrentId("hashnigga"), 67);
+        val pieceIdInvalid=PieceId(TorrentId("hashnigga67"), 67);
+        val pieceValid= PieceInfo(pieceIdValid.torrent,pieceIdValid.number,"batman",67, PieceStatus.entries[0], "batman.piece");
+        val pieceInvalid= PieceInfo(pieceIdInvalid.torrent,pieceIdInvalid.number,"batnigga",67, PieceStatus.entries[0], "batnigga.piece");
         assertTrue(tr.insertPiece(pieceValid));
         assertEquals("batman", tr.getPieceById(pieceIdValid)?.hash);
         assertFalse(tr.insertPiece(pieceInvalid));
@@ -295,10 +296,10 @@ class TorrentRepositoryTest {
     fun testInsertPeer()
     {
         val tr=prepareTest();
-        val peerIdValid=PeerId(TorrentId(1), "parkside.il");
-        val peerIdInvalid=PeerId(TorrentId(67), "kongstrong.il");
-        val peerValid= PeerInfo(PeerId.PLACEHOLDER, peerIdValid.address, peerIdValid.torrent_id);
-        val peerInvalid= PeerInfo(PeerId.PLACEHOLDER,peerIdInvalid.address,peerIdInvalid.torrent_id);
+        val peerIdValid=PeerId(TorrentId("hashnigga"), "parkside.il");
+        val peerIdInvalid=PeerId(TorrentId("hashnigga67"), "kongstrong.il");
+        val peerValid= PeerInfo(peerIdValid.torrent, peerIdValid.address);
+        val peerInvalid= PeerInfo(peerIdInvalid.torrent,peerIdInvalid.address);
         assertTrue(tr.insertPeer(peerValid));
         assertEquals(peerIdValid.address, tr.getPeerById(peerIdValid)?.address);
         assertFalse(tr.insertPeer(peerInvalid));
@@ -310,23 +311,23 @@ class TorrentRepositoryTest {
     {
         val tr=prepareTest();
 
-        val torrent=TorrentInfo(TorrentId.PLACEHOLDER, "bigya.hu","john bigyahu", 67);
+        val torrent=TorrentInfo("hashnigga67", "bigya.hu","john bigyahu", 67, TorrentStatus.entries[0]);
         val filesValid=listOf<FileInfo>(
-            FileInfo(FileId.PLACEHOLDER,"john", 67, 0, TorrentId.PLACEHOLDER),
-            FileInfo(FileId.PLACEHOLDER,"bigyahu", 67, 1, TorrentId.PLACEHOLDER),
+            FileInfo(torrent.getId(),0,"john", 67),
+            FileInfo(torrent.getId(),1,"bigyahu", 67),
         );
         val piecesValid=listOf<PieceInfo>(
-            PieceInfo(PieceId.PLACEHOLDER, "john", 67, 0, PieceStatus.entries[0], "john.piece", TorrentId.PLACEHOLDER),
-            PieceInfo(PieceId.PLACEHOLDER, "bigyahu", 67, 1, PieceStatus.entries[0], "bigyahu.piece", TorrentId.PLACEHOLDER)
+            PieceInfo(torrent.getId(), 0,"john", 67, PieceStatus.entries[0], "john.piece"),
+            PieceInfo(torrent.getId(),1, "bigyahu", 67,  PieceStatus.entries[0], "bigyahu.piece")
         );
         val peersValid=listOf<PeerInfo>(
-            PeerInfo(PeerId.PLACEHOLDER, "chatgps.hu", TorrentId.PLACEHOLDER),
-            PeerInfo(PeerId.PLACEHOLDER, "kms.hu", TorrentId.PLACEHOLDER)
+            PeerInfo(torrent.getId(), "chatgps.hu"),
+            PeerInfo(torrent.getId(), "kms.hu")
         );
 
         assertTrue(tr.insertTorrentFullData(torrent, piecesValid, filesValid, peersValid));
         assertNotNull(tr.getTorrentByName(torrent.name));
-        val torrentId=tr.getTorrentByName(torrent.name)!!.id;
+        val torrentId=tr.getTorrentByName(torrent.name)!!.getId();
         assertEquals(2, tr.getPiecesByTorrent(torrentId).size);
         assertEquals(2,tr.getFilesByTorrent(torrentId).size);
         assertEquals(2,tr.getPeersByTorrent(torrentId).size);
@@ -336,10 +337,10 @@ class TorrentRepositoryTest {
     fun testInsertPeerOffering()
     {
         val tr=prepareTest();
-        val peerValid=PeerId(TorrentId(1), "sussy.hu");
-        val peerInvalid=PeerId(TorrentId(67), "idf.hu");
-        val pieceValid=PieceId(TorrentId(1),0);
-        val pieceInvalid=PieceId(TorrentId(67),0);
+        val peerValid=PeerId(TorrentId("hashnigga"), "sussy.hu");
+        val peerInvalid=PeerId(TorrentId("hashnigga67"), "idf.hu");
+        val pieceValid=PieceId(TorrentId("hashnigga"),0);
+        val pieceInvalid=PieceId(TorrentId("hashnigga67"),0);
         assertTrue(tr.insertPeerOffering(peerValid,pieceValid));
         assertFalse(tr.insertPeerOffering(peerInvalid,pieceValid));
         assertFalse(tr.insertPeerOffering(peerValid,pieceInvalid));
@@ -349,9 +350,9 @@ class TorrentRepositoryTest {
     fun testUpdateTorrent()
     {
         val tr=prepareTest();
-        val torrent=TorrentInfo(TorrentId(1),"rizzler.org","rizzler",67);
+        val torrent=TorrentInfo("hashnigga","rizzler.org","rizzler",67, TorrentStatus.entries[0]);
         assertTrue(tr.updateTorrent(torrent));
-        val newTorrent=tr.getTorrentById(torrent.id);
+        val newTorrent=tr.getTorrentById(torrent.getId());
         assertNotNull(newTorrent);
         assertEquals(torrent, newTorrent);
     }
@@ -360,9 +361,9 @@ class TorrentRepositoryTest {
     fun testUpdatePiece()
     {
         val tr=prepareTest();
-        val piece=PieceInfo(PieceId(TorrentId(1),0),"rizzler",6767,0,PieceStatus.DELETED,"rizzler.piece",TorrentId(1));
+        val piece=PieceInfo(TorrentId("hashnigga"),0,"rizzler",6767,PieceStatus.entries[0],"rizzler.piece");
         assertTrue(tr.updatePiece(piece));
-        val onePiece=tr.getPieceById(piece.id);
+        val onePiece=tr.getPieceById(piece.getId());
         assertNotNull(onePiece);
         assertEquals(piece, onePiece);
     }
@@ -371,9 +372,9 @@ class TorrentRepositoryTest {
     fun testUpdateFile()
     {
         val tr=prepareTest();
-        val file=FileInfo(FileId(TorrentId(1),0),"rizzler.exe",69,0, TorrentId(1));
+        val file=FileInfo(TorrentId("hashnigga"),0,"rizzler.exe",69);
         assertTrue(tr.updateFile(file));
-        val newFile=tr.getFileById(file.id);
+        val newFile=tr.getFileById(file.getId());
         assertNotNull(newFile);
         assertEquals(file, newFile);
     }
@@ -382,13 +383,13 @@ class TorrentRepositoryTest {
     fun testUpdatePeerPieceOffering()
     {
         val tr=prepareTest();
-        val peer=PeerId(TorrentId(1),"idf.hu");
+        val peer=PeerId(TorrentId("hashnigga"),"idf.hu");
         val piecesValid=listOf<PieceId>(
-            PieceId(TorrentId(1),0)
+            PieceId(TorrentId("hashnigga"),0)
         );
         val piecesInvalid=listOf<PieceId>(
-            PieceId(TorrentId(1),0),
-            PieceId(TorrentId(1),67)
+            PieceId(TorrentId("hashnigga"),0),
+            PieceId(TorrentId("hashnigga"),67)
         );
 
         assertFalse(tr.updatePeerOffering(peer,piecesInvalid));

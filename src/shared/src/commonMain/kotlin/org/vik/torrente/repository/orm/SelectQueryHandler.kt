@@ -13,29 +13,30 @@ fun TorrentRepository.getTorrents() : List<TorrentInfo>{
     return db.selectQueries.queryTorrents().executeAsList().map{
             torrent ->
         TorrentInfo(
-            TorrentId(torrent.id),
+            torrent.hash,
             torrent.tracker,
             torrent.name,
             torrent.length,
+            TorrentStatus.entries[torrent.status.toInt()]
         )
     };
 }
 
 fun TorrentRepository.getTorrentById(torrent : TorrentId) : TorrentInfo? {
-    val result=db.selectQueries.queryTorrentById(torrent.id).executeAsOneOrNull();
-    return if(result!=null) TorrentInfo(TorrentId(result.id), result.tracker, result.name, result.length) else null;
+    val result=db.selectQueries.queryTorrentById(torrent.hash).executeAsOneOrNull();
+    return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatus.entries[result.status.toInt()]) else null;
 }
 
 fun TorrentRepository.getTorrentByName(torrentName : String):TorrentInfo?{
     val result=db.selectQueries.queryTorrentByName(torrentName).executeAsOneOrNull();
-    return if(result!=null) TorrentInfo(TorrentId(result.id), result.tracker, result.name, result.length) else null;
+    return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatus.entries[result.status.toInt()]) else null;
 }
 
 fun TorrentRepository.getPieceById(piece : PieceId) : PieceInfo? {
-    val result=db.selectQueries.queryPieceById(piece.number, piece.torrent_id.id).executeAsOneOrNull();
+    val result=db.selectQueries.queryPieceById(piece.number, piece.torrent.hash).executeAsOneOrNull();
 
     return if(result!=null)
-        PieceInfo(piece, result.hash, result.length, result.number, PieceStatus.entries[result.status.toInt()], result.download_path, piece.torrent_id)
+        PieceInfo(TorrentId(result.torrent_hash), result.number, result.hash, result.length, PieceStatus.entries[result.status.toInt()], result.download_path)
     else null;
 }
 
@@ -52,24 +53,24 @@ fun TorrentRepository.getPieceArray(pieces:List<PieceId>):List<PieceInfo?> {
 }
 
 fun TorrentRepository.getPiecesByTorrent(torrent:TorrentId):List<PieceInfo>{
-    return db.selectQueries.queryPiecesByTorrent(torrent.id).executeAsList().map{
+    return db.selectQueries.queryPiecesByTorrent(torrent.hash).executeAsList().map{
             piece ->
-        PieceInfo(PieceId(torrent, piece.number), piece.hash, piece.length, piece.number, PieceStatus.entries[piece.status.toInt()], piece.download_path, torrent)
+        PieceInfo(TorrentId(piece.torrent_hash), piece.number,piece.hash, piece.length, PieceStatus.entries[piece.status.toInt()], piece.download_path)
     }
 }
 
 fun TorrentRepository.getPiecesByPeer(peer:PeerId):List<PieceInfo>{
-    return db.selectQueries.queryPiecesByPeer(peer.torrent_id.id, peer.address).executeAsList().map{
+    return db.selectQueries.queryPiecesByPeer(peer.torrent.hash, peer.address).executeAsList().map{
             piece ->
-        PieceInfo(PieceId(TorrentId(piece.torrent_id), piece.number), piece.hash, piece.length, piece.number, PieceStatus.entries[piece.status.toInt()], piece.download_path, TorrentId(piece.torrent_id))
+        PieceInfo(TorrentId(piece.torrent_hash), piece.number, piece.hash, piece.length,  PieceStatus.entries[piece.status.toInt()], piece.download_path)
     }
 }
 
 fun TorrentRepository.getFileById(file : FileId) : FileInfo? {
-    val file2=db.selectQueries.queryFileById(file.number, file.torrent_id.id).executeAsOneOrNull();
+    val file2=db.selectQueries.queryFileById(file.number, file.torrent.hash).executeAsOneOrNull();
 
     return if(file2!=null)
-        FileInfo(file, file2.name, file2.length,file2.number, file.torrent_id);
+        FileInfo(TorrentId(file2.torrent_hash), file2.number,file2.name, file2.length);
     else
         null;
 }
@@ -87,16 +88,16 @@ fun TorrentRepository.getFileArray(files:List<FileId>):List<FileInfo?> {
 }
 
 fun TorrentRepository.getFilesByTorrent(torrent:TorrentId):List<FileInfo>{
-    return db.selectQueries.queryFilesByTorrent(torrent.id).executeAsList().map{
+    return db.selectQueries.queryFilesByTorrent(torrent.hash).executeAsList().map{
             file ->
-        FileInfo(FileId(torrent,file.number),file.name,file.length, file.number, torrent);
+        FileInfo(TorrentId(file.torrent_hash),file.number,file.name,file.length);
     }
 }
 
 fun TorrentRepository.getPeerById(peer : PeerId) : PeerInfo? {
-    val result=db.selectQueries.queryPeerById(peer.address, peer.torrent_id.id).executeAsOneOrNull();
+    val result=db.selectQueries.queryPeerById(peer.address, peer.torrent.hash).executeAsOneOrNull();
     return if(result!=null)
-        PeerInfo(PeerId(TorrentId(result.torrent_id), result.address), result.address, TorrentId(result.torrent_id));
+        PeerInfo(TorrentId(result.torrent_hash), result.address);
     else null;
 }
 
@@ -111,15 +112,15 @@ fun TorrentRepository.getPeerArray(peers:List<PeerId>):List<PeerInfo?> {
 }
 
 fun TorrentRepository.getPeersByPiece(piece:PieceId) : List<PeerInfo> {
-    return db.selectQueries.queryPeersByPiece(piece.torrent_id.id, piece.number).executeAsList().map{
+    return db.selectQueries.queryPeersByPiece(piece.torrent.hash, piece.number).executeAsList().map{
             peer ->
-        PeerInfo(PeerId(TorrentId(peer.torrent_id), peer.address),peer.address, TorrentId(peer.torrent_id));
+        PeerInfo(TorrentId(peer.torrent_hash),peer.address);
     };
 }
 
 fun TorrentRepository.getPeersByTorrent(torrent:TorrentId) : List<PeerInfo> {
-    return db.selectQueries.queryPeersByTorrent(torrent.id).executeAsList().map{
+    return db.selectQueries.queryPeersByTorrent(torrent.hash).executeAsList().map{
             peer ->
-        PeerInfo(PeerId(TorrentId(peer.torrent_id), peer.address),peer.address, TorrentId(peer.torrent_id));
+        PeerInfo(TorrentId(peer.torrent_hash),peer.address);
     };
 }

@@ -1,17 +1,17 @@
 updateTorrentById:
 UPDATE Torrents
-SET name=:name, tracker=:tracker, length=:length
-WHERE id=:torrent_id;
+SET name=:name, tracker=:tracker, length=:length, status=:status
+WHERE hash=:torrent_hash;
 
 updatePieceById:
 UPDATE Pieces
 SET hash=:hash, length=:length, status=:status, download_path=:download_path
-WHERE torrent_id=:torrent_id AND number=:number;
+WHERE torrent_hash=:torrent_hash AND number=:number;
 
 updateFileById:
 UPDATE Files
 SET name=:name, length=:length
-WHERE torrent_id=:torrent_id AND number=:number;
+WHERE torrent_hash=:torrent_hash AND number=:number;
 
 affectedRows:
 SELECT changes();
