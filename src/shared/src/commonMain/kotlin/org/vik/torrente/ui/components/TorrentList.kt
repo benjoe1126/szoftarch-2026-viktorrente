@@ -31,6 +31,7 @@ fun TorrentList(
     onOpenFolder: (String) -> Unit,
     onReannounce: (String) -> Unit,
     onAddPeer: (String, String) -> Unit,
+    onTorrentSelected: (String) -> Unit,
     onAddTorrentClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -93,7 +94,8 @@ fun TorrentList(
                     onDelete = onDelete,
                     onOpenFolder = onOpenFolder,
                     onReannounce = onReannounce,
-                    onAddPeer = onAddPeer
+                    onAddPeer = onAddPeer,
+                    onClick = { onTorrentSelected(torrent.id) }
                 )
             }
         }
