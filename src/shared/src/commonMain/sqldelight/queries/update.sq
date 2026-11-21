@@ -15,7 +15,7 @@ WHERE torrent_hash=:torrent_hash AND number=:number;
 
 updatePeerById:
 UPDATE Peers
-SET address=:address
+SET address=:address, status=:status
 WHERE torrent_hash=:torrent_hash AND id_hash=:id_hash;
 
 affectedRows:

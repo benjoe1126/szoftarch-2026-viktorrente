@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS Peers(
     address TEXT NOT NULL,
     id_hash TEXT NOT NULL,
     torrent_hash TEXT NOT NULL,
+    status INTEGER NOT NULL,
     PRIMARY KEY(id_hash, torrent_hash),
     CONSTRAINT fk_torrent FOREIGN KEY(torrent_hash) REFERENCES Torrents(hash)
 );

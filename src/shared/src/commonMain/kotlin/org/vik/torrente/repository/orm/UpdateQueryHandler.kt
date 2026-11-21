@@ -32,7 +32,7 @@ fun TorrentRepository.updateFile(file: FileInfo):Boolean  {
 
 fun TorrentRepository.updatePeer(peer: PeerInfo) : Boolean {
     return db.transactionWithResult {
-        db.updateQueries.updatePeerById(peer.address,peer.torrent.hash, peer.idHash);
+        db.updateQueries.updatePeerById(peer.address,peer.status.ordinal.toLong(),peer.torrent.hash, peer.idHash);
         db.updateQueries.affectedRows().executeAsOne().toInt()==1;
     }
 }
