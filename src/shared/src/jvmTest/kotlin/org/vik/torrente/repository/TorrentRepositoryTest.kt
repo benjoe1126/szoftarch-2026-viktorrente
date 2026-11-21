@@ -380,6 +380,19 @@ class TorrentRepositoryTest {
     }
 
     @Test
+    fun testUpdatePeer()
+    {
+        val tr=prepareTest();
+        val peerValid=PeerInfo(TorrentId("hashnigga"),"idf","rizzler.exe");
+        assertTrue(tr.updatePeer(peerValid));
+        val newPeer=tr.getPeerById(peerValid.getId());
+        assertNotNull(newPeer);
+        assertEquals("rizzler.exe", newPeer.address);
+        val peerInvalid=PeerInfo(TorrentId("hashnigga67"),"idf","rizzler.exe");
+        assertFalse(tr.updatePeer(peerInvalid));
+    }
+
+    @Test
     fun testUpdatePeerPieceOffering()
     {
         val tr=prepareTest();

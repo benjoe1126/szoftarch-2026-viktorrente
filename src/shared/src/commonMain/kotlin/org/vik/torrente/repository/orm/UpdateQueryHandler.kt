@@ -30,6 +30,13 @@ fun TorrentRepository.updateFile(file: FileInfo):Boolean  {
     };
 }
 
+fun TorrentRepository.updatePeer(peer: PeerInfo) : Boolean {
+    return db.transactionWithResult {
+        db.updateQueries.updatePeerById(peer.address,peer.torrent.hash, peer.idHash);
+        db.updateQueries.affectedRows().executeAsOne().toInt()==1;
+    }
+}
+
 fun TorrentRepository.updatePeerOffering(peer: PeerId, piecesOffered : List<PieceId>) : Boolean {
     return db.transactionWithResult {
         if(!deletePeerPieceOffers(peer))

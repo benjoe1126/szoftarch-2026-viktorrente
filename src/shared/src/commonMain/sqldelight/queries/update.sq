@@ -13,5 +13,10 @@ UPDATE Files
 SET name=:name, length=:length
 WHERE torrent_hash=:torrent_hash AND number=:number;
 
+updatePeerById:
+UPDATE Peers
+SET address=:address
+WHERE torrent_hash=:torrent_hash AND id_hash=:id_hash;
+
 affectedRows:
 SELECT changes();
