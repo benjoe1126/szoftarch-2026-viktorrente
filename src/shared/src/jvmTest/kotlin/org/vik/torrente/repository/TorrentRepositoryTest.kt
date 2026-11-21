@@ -5,6 +5,7 @@ import org.vik.torrente.repository.models.FileId
 import org.vik.torrente.repository.models.FileInfo
 import org.vik.torrente.repository.models.PeerId
 import org.vik.torrente.repository.models.PeerInfo
+import org.vik.torrente.repository.models.PeerStatus
 import org.vik.torrente.repository.models.PieceId
 import org.vik.torrente.repository.models.PieceInfo
 import org.vik.torrente.repository.models.PieceStatus
@@ -298,8 +299,8 @@ class TorrentRepositoryTest {
         val tr=prepareTest();
         val peerIdValid=PeerId(TorrentId("hashnigga"), "parkside");
         val peerIdInvalid=PeerId(TorrentId("hashnigga67"), "kongstrong");
-        val peerValid= PeerInfo(peerIdValid.torrent, peerIdValid.idHash, "parkside.il");
-        val peerInvalid= PeerInfo(peerIdInvalid.torrent,peerIdInvalid.idHash, "kongstrong.il");
+        val peerValid= PeerInfo(peerIdValid.torrent, peerIdValid.idHash, "parkside.il",PeerStatus.INACTIVE);
+        val peerInvalid= PeerInfo(peerIdInvalid.torrent,peerIdInvalid.idHash, "kongstrong.il",PeerStatus.INACTIVE);
         assertTrue(tr.insertPeer(peerValid));
         assertEquals(peerIdValid.idHash, tr.getPeerById(peerIdValid)?.idHash);
         assertFalse(tr.insertPeer(peerInvalid));
@@ -321,8 +322,8 @@ class TorrentRepositoryTest {
             PieceInfo(torrent.getId(),1, "bigyahu", 67,  PieceStatus.entries[0], "bigyahu.piece")
         );
         val peersValid=listOf<PeerInfo>(
-            PeerInfo(torrent.getId(), "chatgps","chatgps.hu"),
-            PeerInfo(torrent.getId(), "kms","kms.hu")
+            PeerInfo(torrent.getId(), "chatgps","chatgps.hu",PeerStatus.INACTIVE),
+            PeerInfo(torrent.getId(), "kms","kms.hu",PeerStatus.INACTIVE)
         );
 
         assertTrue(tr.insertTorrentFullData(torrent, piecesValid, filesValid, peersValid));
@@ -383,12 +384,12 @@ class TorrentRepositoryTest {
     fun testUpdatePeer()
     {
         val tr=prepareTest();
-        val peerValid=PeerInfo(TorrentId("hashnigga"),"idf","rizzler.exe");
+        val peerValid=PeerInfo(TorrentId("hashnigga"),"idf","rizzler.exe",PeerStatus.INACTIVE);
         assertTrue(tr.updatePeer(peerValid));
         val newPeer=tr.getPeerById(peerValid.getId());
         assertNotNull(newPeer);
         assertEquals("rizzler.exe", newPeer.address);
-        val peerInvalid=PeerInfo(TorrentId("hashnigga67"),"idf","rizzler.exe");
+        val peerInvalid=PeerInfo(TorrentId("hashnigga67"),"idf","rizzler.exe",PeerStatus.INACTIVE);
         assertFalse(tr.updatePeer(peerInvalid));
     }
 

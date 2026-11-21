@@ -1,7 +1,7 @@
 package org.vik.torrente.repository.models
 
 enum class PieceStatus{
-    AVAILABLE, NOT_AVAILABLE
+    AVAILABLE, NOT_AVAILABLE, DOWNLOADING
 }
 
 data class PieceId(

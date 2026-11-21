@@ -30,11 +30,11 @@ VALUES
 ("mustar", 27, 1, "hashnigga", 0, "mustar.piece");
 
 fillPeers:
-INSERT INTO Peers (id_hash, address, torrent_hash)
+INSERT INTO Peers (id_hash, address, torrent_hash, status)
 VALUES
-("idf","idf.hu", "hashnigga"),
-("sussy","sussy.hu", "hashnigga"),
-("amogus","amogus.hu","hashnigga");
+("idf","idf.hu", "hashnigga", 0),
+("sussy","sussy.hu", "hashnigga", 0),
+("amogus","amogus.hu","hashnigga", 0);
 
 fillPeerHasPiece:
 INSERT INTO PeerHasPiece (torrent_hash, peer_id_hash, piece_number)

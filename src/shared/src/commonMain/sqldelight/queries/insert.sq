@@ -11,8 +11,8 @@ INSERT INTO Files (name, length, torrent_hash, number)
 VALUES (:name, :length, :torrent_hash, :number);
 
 insertPeer:
-INSERT INTO Peers (address, id_hash, torrent_hash)
-VALUES (:address, :id_hash, :torrent_hash);
+INSERT INTO Peers (address, id_hash, torrent_hash, status)
+VALUES (:address, :id_hash, :torrent_hash, :status);
 
 insertPeerOffering:
 INSERT INTO PeerHasPiece (torrent_hash, peer_id_hash, piece_number)

@@ -44,11 +44,11 @@ FROM Peers
 WHERE id_hash = :id_hash AND torrent_hash = :torrent_hash;
 
 queryPeersByPiece:
-SELECT Peers.address AS address, Peers.id_hash AS id_hash, Peers.torrent_hash AS torrent_hash
+SELECT Peers.address AS address, Peers.id_hash AS id_hash, Peers.torrent_hash AS torrent_hash, Peers.status AS status
 FROM Peers INNER JOIN PeerHasPiece ON (Peers.id_hash=PeerHasPiece.peer_id_hash AND Peers.torrent_hash=PeerHasPiece.torrent_hash)
 WHERE PeerHasPiece.torrent_hash=:torrent_hash AND PeerHasPiece.piece_number=:piece_number;
 
 queryPeersByTorrent:
-SELECT address, id_hash, torrent_hash
+SELECT *
 FROM Peers
 WHERE torrent_hash=:torrent_hash;

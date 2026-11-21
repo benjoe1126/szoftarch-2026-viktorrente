@@ -19,7 +19,7 @@ fun TorrentRepository.insertPiece(piece:PieceInfo):Boolean{
 }
 
 fun TorrentRepository.insertPeer(peer:PeerInfo):Boolean{
-    return runCatching{db.insertQueries.insertPeer(peer.address,peer.idHash, peer.torrent.hash)}.isSuccess;
+    return runCatching{db.insertQueries.insertPeer(peer.address,peer.idHash, peer.torrent.hash,peer.status.ordinal.toLong())}.isSuccess;
 }
 
 /*
