@@ -86,21 +86,39 @@ fun PeersTab(torrent: Torrent) {
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                Text("IP / Port", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
-                Text("Client ID", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
-                Text("Progress", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+                Text("IP", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
+                Text("Client", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
+                Text("Flags", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+                Text("%", modifier = Modifier.weight(0.8f), style = MaterialTheme.typography.labelMedium)
                 Text("Down Speed", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
                 Text("Up Speed", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
+                Text("Downloaded", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
+                Text("Uploaded", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
             }
             HorizontalDivider()
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(torrent.peerList, key = { it.ipAddress + it.port }) { peer ->
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("${peer.ipAddress}:${peer.port}", modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
-                        Text(peer.client, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${(peer.progress * 100).toInt()}%", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                        Text("↓ ${Formatters.formatSpeed(peer.downloadSpeed)}", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-                        Text("↑ ${Formatters.formatSpeed(peer.uploadSpeed)}", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                        Text(peer.ipAddress, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
+                        Text(peer.client, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
+                        Text(peer.flags, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = if (peer.progress >= 1.0f) "100.0" else "%.1f".format(peer.progress * 100f),
+                            modifier = Modifier.weight(0.8f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = if (peer.downloadSpeed == 0L) "" else Formatters.formatSpeed(peer.downloadSpeed),
+                            modifier = Modifier.weight(1.5f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = if (peer.uploadSpeed == 0L) "" else Formatters.formatSpeed(peer.uploadSpeed),
+                            modifier = Modifier.weight(1.5f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(Formatters.formatBytes(peer.downloaded), modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
+                        Text(Formatters.formatBytes(peer.uploaded), modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
