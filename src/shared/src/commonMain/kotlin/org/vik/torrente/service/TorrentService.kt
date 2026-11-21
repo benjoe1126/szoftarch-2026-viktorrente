@@ -21,12 +21,11 @@ interface TorrentService {
     suspend fun parseTorrent(filePath: String, fileName: String): ParsedTorrentInfo
 
     /**
-     * Adds a parsed torrent to the active download queue with chosen files and destination.
+     * Adds a parsed torrent to the active download queue with chosen destination.
      */
     fun addTorrent(
         parsedInfo: ParsedTorrentInfo,
         destinationPath: String,
-        selectedFileIds: Set<String>,
         mode: TorrentMode
     )
 

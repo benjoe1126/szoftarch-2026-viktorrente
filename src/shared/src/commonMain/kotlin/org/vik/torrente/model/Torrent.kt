@@ -26,8 +26,7 @@ enum class TorrentMode {
 data class TorrentFile(
     val id: String,
     val path: String,
-    val sizeBytes: Long,
-    val isSelected: Boolean = true
+    val sizeBytes: Long
 )
 
 /**
