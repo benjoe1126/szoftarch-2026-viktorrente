@@ -14,34 +14,34 @@ clearPeerHasPiece:
 DELETE FROM PeerHasPiece;
 
 fillTorrents:
-INSERT INTO Torrents (name, tracker, length)
-VALUES ("nigga", "nigga.org", 67);
+INSERT INTO Torrents (hash, name, tracker, length, status)
+VALUES ("hashnigga", "nigga", "nigga.org", 67, 0);
 
 fillFiles:
-INSERT INTO Files (name, length, number, torrent_id)
+INSERT INTO Files (name, length, number, torrent_hash)
 VALUES
-("big.txt", 34, 0, 1),
-("chungus.txt", 33, 1, 1);
+("big.txt", 34, 0, "hashnigga"),
+("chungus.txt", 33, 1, "hashnigga");
 
 fillPieces:
-INSERT INTO Pieces (hash, length, number, torrent_id, status, download_path)
+INSERT INTO Pieces (hash, length, number, torrent_hash, status, download_path)
 VALUES
-("globus", 50, 0, 1, 0, "globus.piece"),
-("mustar", 27, 1, 1, 0, "mustar.piece");
+("globus", 50, 0, "hashnigga", 0, "globus.piece"),
+("mustar", 27, 1, "hashnigga", 0, "mustar.piece");
 
 fillPeers:
-INSERT INTO Peers (address, torrent_id)
+INSERT INTO Peers (id_hash, address, torrent_hash)
 VALUES
-("idf.hu", 1),
-("sussy.hu", 1),
-("amogus.hu",1);
+("idf","idf.hu", "hashnigga"),
+("sussy","sussy.hu", "hashnigga"),
+("amogus","amogus.hu","hashnigga");
 
 fillPeerHasPiece:
-INSERT INTO PeerHasPiece (torrent_id, peer_address, piece_number)
+INSERT INTO PeerHasPiece (torrent_hash, peer_id_hash, piece_number)
 VALUES
-(1, "idf.hu", 0),
-(1, "idf.hu", 1),
-(1, "sussy.hu",1);
+("hashnigga", "idf", 0),
+("hashnigga", "idf", 1),
+("hashnigga", "sussy",1);
 
 affectedRows:
 SELECT changes();

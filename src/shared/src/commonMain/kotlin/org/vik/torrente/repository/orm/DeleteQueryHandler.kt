@@ -13,18 +13,18 @@ fun TorrentRepository.deleteTorrent(torrent: TorrentId):Boolean{
                 val peers = getPeersByTorrent(torrent);
 
                 for(piece in pieces)
-                    if(!deletePiece(piece.id))
+                    if(!deletePiece(piece.getId()))
                         throw Exception();
 
                 for(file in files)
-                    if(!deleteFile(file.id))
+                    if(!deleteFile(file.getId()))
                         throw Exception();
 
                 for(peer in peers)
-                    if(!deletePeer(peer.id))
+                    if(!deletePeer(peer.getId()))
                         throw Exception();
 
-                db.deleteQueries.deleteTorrentByTorrentId(torrent.id);
+                db.deleteQueries.deleteTorrentByTorrentId(torrent.hash);
             }
         }
     }.isSuccess;
@@ -34,7 +34,7 @@ fun TorrentRepository.deleteFile(file:FileId):Boolean{
     return runCatching {
         db.transaction {
             if(getFileById(file)!=null)
-                db.deleteQueries.deleteFileByFileId(file.torrent_id.id, file.number);
+                db.deleteQueries.deleteFileByFileId(file.torrent.hash, file.number);
         }
     }.isSuccess;
 }
@@ -46,7 +46,7 @@ fun TorrentRepository.deletePiece(piece:PieceId):Boolean{
             {
                 if(!deletePeerPieceOffers(piece))
                     throw Exception();
-                db.deleteQueries.deletePieceByPieceId(piece.torrent_id.id, piece.number);
+                db.deleteQueries.deletePieceByPieceId(piece.torrent.hash, piece.number);
             }
         }
     }.isSuccess;
@@ -59,7 +59,7 @@ fun TorrentRepository.deletePeer(peer:PeerId):Boolean{
             {
                 if(!deletePeerPieceOffers(peer))
                     throw Exception();
-                db.deleteQueries.deletePeerByPeerId(peer.torrent_id.id, peer.address);
+                db.deleteQueries.deletePeerByPeerId(peer.torrent.hash, peer.idHash);
             }
         }
     }.isSuccess;
@@ -68,12 +68,12 @@ fun TorrentRepository.deletePeer(peer:PeerId):Boolean{
 //deletes the entries containing an offering of the peer regarding a piece
 fun TorrentRepository.deletePeerPieceOffers(peer:PeerId):Boolean{
     return runCatching{
-        db.deleteQueries.deletePhpByPeerId(peer.torrent_id.id, peer.address);
+        db.deleteQueries.deletePhpByPeerId(peer.torrent.hash, peer.idHash);
     }.isSuccess;
 }
 
 fun TorrentRepository.deletePeerPieceOffers(piece:PieceId):Boolean{
     return runCatching{
-        db.deleteQueries.deletePhpByPieceId(piece.torrent_id.id, piece.number);
+        db.deleteQueries.deletePhpByPieceId(piece.torrent.hash, piece.number);
     }.isSuccess;
 }
