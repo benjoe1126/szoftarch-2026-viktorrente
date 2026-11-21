@@ -52,13 +52,10 @@ import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 fun AddTorrentDialog(
     parsedInfo: ParsedTorrentInfo,
     initialDestinationPath: String,
-    onConfirm: (destinationPath: String, selectedFileIds: Set<String>, mode: TorrentMode) -> Unit,
+    onConfirm: (destinationPath: String, mode: TorrentMode) -> Unit,
     onDismiss: () -> Unit
 ) {
     var destinationPath by remember(initialDestinationPath) { mutableStateOf(initialDestinationPath) }
-    var selectedFileIds by remember(parsedInfo) {
-        mutableStateOf(parsedInfo.files.map { it.id }.toSet())
-    }
     var selectedMode by remember { mutableStateOf(TorrentMode.DOWNLOAD) }
     
     val directoryPicker = rememberDirectoryPickerLauncher(
@@ -186,112 +183,7 @@ fun AddTorrentDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // --- Torrent Files Section ---
-                val totalSelectedBytes = parsedInfo.files
-                    .filter { it.id in selectedFileIds }
-                    .sumOf { it.sizeBytes }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Files (${selectedFileIds.size}/${parsedInfo.files.size} selected, ${Formatters.formatBytes(totalSelectedBytes)})",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(
-                            onClick = { selectedFileIds = parsedInfo.files.map { it.id }.toSet() }
-                        ) {
-                            Text("Select All", style = MaterialTheme.typography.labelMedium)
-                        }
-                        TextButton(
-                            onClick = { selectedFileIds = emptySet() }
-                        ) {
-                            Text("Deselect All", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Scrollable File List in a surfaceContainer box
-                Box(
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .heightIn(min = 120.dp, max = 240.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                ) {
-                    LazyColumn {
-                        items(parsedInfo.files, key = { it.id }) { file ->
-                            val isChecked = file.id in selectedFileIds
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        selectedFileIds = if (isChecked) {
-                                            selectedFileIds - file.id
-                                        } else {
-                                            selectedFileIds + file.id
-                                        }
-                                    }
-                                    .padding(vertical = 4.dp, horizontal = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = isChecked,
-                                    onCheckedChange = { checked ->
-                                        selectedFileIds = if (checked) {
-                                            selectedFileIds + file.id
-                                        } else {
-                                            selectedFileIds - file.id
-                                        }
-                                    }
-                                )
-
-                                Icon(
-                                    imageVector = AppIcons.File,
-                                    contentDescription = "File",
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Text(
-                                    text = file.path,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Text(
-                                    text = Formatters.formatBytes(file.sizeBytes),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Dialog Action Buttons
+                // --- Mode Selection Section ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -305,9 +197,9 @@ fun AddTorrentDialog(
 
                     Button(
                         onClick = {
-                            onConfirm(destinationPath, selectedFileIds, selectedMode)
+                            onConfirm(destinationPath, selectedMode)
                         },
-                        enabled = selectedFileIds.isNotEmpty() && destinationPath.isNotBlank()
+                        enabled = destinationPath.isNotBlank()
                     ) {
                         Text("Add Torrent")
                     }

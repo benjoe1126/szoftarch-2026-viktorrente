@@ -112,8 +112,8 @@ fun App(
                 AddTorrentDialog(
                     parsedInfo = parsedInfo,
                     initialDestinationPath = defaultDownloadDirectory,
-                    onConfirm = { destinationPath, selectedFileIds, mode ->
-                        torrentService.addTorrent(parsedInfo, destinationPath, selectedFileIds, mode)
+                    onConfirm = { destinationPath, mode ->
+                        torrentService.addTorrent(parsedInfo, destinationPath, mode)
                         pendingTorrent = null
                     },
                     onDismiss = {

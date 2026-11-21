@@ -60,7 +60,7 @@ class MockTorrentService(
                 peerList = generatePeers(42),
                 trackers = defaultTrackers,
                 files = listOf(
-                    TorrentFile("f1", "ubuntu-24.04-desktop-amd64.iso", 6_104_743_936L, true)
+                    TorrentFile("f1", "ubuntu-24.04-desktop-amd64.iso", 6_104_743_936L)
                 )
             ),
             Torrent(
@@ -76,9 +76,9 @@ class MockTorrentService(
                 peerList = generatePeers(128),
                 trackers = defaultTrackers,
                 files = listOf(
-                    TorrentFile("f2_1", "big_buck_bunny_1080p_surround.avi", 850_000_000L, true),
-                    TorrentFile("f2_2", "poster.jpg", 25_000_000L, true),
-                    TorrentFile("f2_3", "readme.txt", 10_000_000L, true)
+                    TorrentFile("f2_1", "big_buck_bunny_1080p_surround.avi", 850_000_000L),
+                    TorrentFile("f2_2", "poster.jpg", 25_000_000L),
+                    TorrentFile("f2_3", "readme.txt", 10_000_000L)
                 )
             ),
             Torrent(
@@ -94,7 +94,7 @@ class MockTorrentService(
                 peerList = emptyList(),
                 trackers = defaultTrackers,
                 files = listOf(
-                    TorrentFile("f3_1", "debian-12.5.0-amd64-netinst.iso", 734_000_000L, true)
+                    TorrentFile("f3_1", "debian-12.5.0-amd64-netinst.iso", 734_000_000L)
                 )
             )
         )
@@ -166,21 +166,21 @@ class MockTorrentService(
 
         val sampleFiles = when {
             fileName.contains("bunny", ignoreCase = true) -> listOf(
-                TorrentFile("f_1", "$cleanName.mkv", 850_000_000L, true),
-                TorrentFile("f_2", "trailer.mp4", 45_000_000L, true),
-                TorrentFile("f_3", "cover.jpg", 2_500_000L, true),
-                TorrentFile("f_4", "subtitles_en.srt", 85_000L, true)
+                TorrentFile("f_1", "$cleanName.mkv", 850_000_000L),
+                TorrentFile("f_2", "trailer.mp4", 45_000_000L),
+                TorrentFile("f_3", "cover.jpg", 2_500_000L),
+                TorrentFile("f_4", "subtitles_en.srt", 85_000L)
             )
             fileName.contains("wired", ignoreCase = true) -> listOf(
-                TorrentFile("w_1", "track01_intro.flac", 42_000_000L, true),
-                TorrentFile("w_2", "track02_main.flac", 68_000_000L, true),
-                TorrentFile("w_3", "track03_outro.flac", 55_000_000L, true),
-                TorrentFile("w_4", "artwork.png", 5_000_000L, true)
+                TorrentFile("w_1", "track01_intro.flac", 42_000_000L),
+                TorrentFile("w_2", "track02_main.flac", 68_000_000L),
+                TorrentFile("w_3", "track03_outro.flac", 55_000_000L),
+                TorrentFile("w_4", "artwork.png", 5_000_000L)
             )
             else -> listOf(
-                TorrentFile("p_1", "$cleanName.data", 1_450_000_000L, true),
-                TorrentFile("p_2", "Documentation.pdf", 12_500_000L, true),
-                TorrentFile("p_3", "checksums.sha256", 2_048L, true)
+                TorrentFile("p_1", "$cleanName.data", 1_450_000_000L),
+                TorrentFile("p_2", "Documentation.pdf", 12_500_000L),
+                TorrentFile("p_3", "checksums.sha256", 2_048L)
             )
         }
 
@@ -197,11 +197,9 @@ class MockTorrentService(
     override fun addTorrent(
         parsedInfo: ParsedTorrentInfo,
         destinationPath: String,
-        selectedFileIds: Set<String>,
         mode: TorrentMode
     ) {
-        val selectedFiles = parsedInfo.files.filter { it.id in selectedFileIds }
-        val effectiveTotal = selectedFiles.sumOf { it.sizeBytes }.coerceAtLeast(1L)
+        val effectiveTotal = parsedInfo.files.sumOf { it.sizeBytes }.coerceAtLeast(1L)
 
         val newTorrent = Torrent(
             id = "torrent-${Random.nextInt(1000, 9999)}",
@@ -215,7 +213,7 @@ class MockTorrentService(
             peers = Random.nextInt(5, 50),
             peerList = generatePeers(Random.nextInt(5, 50)),
             trackers = defaultTrackers,
-            files = selectedFiles
+            files = parsedInfo.files
         )
 
         _torrents.value = listOf(newTorrent) + _torrents.value
