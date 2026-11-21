@@ -28,13 +28,23 @@ class MockTorrentService(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    private val clients = listOf(
+        "qBittorrent/4.4.5", "qBittorrent/5.1.0", "qBittorrent/5.3.0",
+        "tTorrent v2.0.2", "μTorrent 3.6", "libTorrent 0.13.8", "Transmission 2.82"
+    )
+
+    private val flagsList = listOf("D P", "d", "P", "D", "U")
+
     private fun generatePeers(count: Int): List<Peer> = (1..count).map {
         Peer(
             ipAddress = "${Random.nextInt(1, 255)}.${Random.nextInt(0, 255)}.${Random.nextInt(0, 255)}.${Random.nextInt(1, 255)}",
             port = Random.nextInt(1024, 65535),
-            client = "-vT0001-" + (1..12).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
+            client = clients.random(),
+            flags = flagsList.random(),
             downloadSpeed = Random.nextLong(0, 150_000),
             uploadSpeed = Random.nextLong(0, 50_000),
+            downloaded = Random.nextLong(1_000_000, 500_000_000),
+            uploaded = Random.nextLong(0, 50_000_000),
             progress = Random.nextFloat()
         )
     }
@@ -124,7 +134,9 @@ class MockTorrentService(
                             torrent.peerList.take(peerTarget)
                         }.map { it.copy(
                             downloadSpeed = Random.nextLong(0, 150_000),
-                            uploadSpeed = Random.nextLong(0, 50_000)
+                            uploadSpeed = Random.nextLong(0, 50_000),
+                            downloaded = it.downloaded + Random.nextLong(0, 150_000),
+                            uploaded = it.uploaded + Random.nextLong(0, 50_000)
                         ) }
 
                         torrent.copy(
@@ -144,7 +156,8 @@ class MockTorrentService(
                             torrent.peerList.take(peerTarget)
                         }.map { it.copy(
                             uploadSpeed = Random.nextLong(0, 150_000),
-                            downloadSpeed = 0L
+                            downloadSpeed = 0L,
+                            uploaded = it.uploaded + Random.nextLong(0, 150_000)
                         ) }
                         
                         torrent.copy(

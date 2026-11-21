@@ -36,8 +36,11 @@ data class Peer(
     val ipAddress: String,
     val port: Int,
     val client: String,
+    val flags: String,       // e.g. "D P", "d", "u"
     val downloadSpeed: Long, // bytes/sec
     val uploadSpeed: Long,   // bytes/sec
+    val downloaded: Long,    // total bytes downloaded from this peer
+    val uploaded: Long,      // total bytes uploaded to this peer
     val progress: Float      // 0.0 to 1.0
 )
 
