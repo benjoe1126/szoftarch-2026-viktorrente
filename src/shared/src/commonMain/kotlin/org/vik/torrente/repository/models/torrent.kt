@@ -11,6 +11,20 @@ enum class TorrentStatus {
     ERROR
 };
 
+/*
+ViewModel instructions:
+[INACTIVE]: not yet started or marked to stop
+[DOWNLOADING,SEEDING,DOWNLOADING_AND_SEEDING]: active or marked to start
+[PAUSED]: paused or marked to pause
+ */
+enum class TorrentMode{
+    INACTIVE,
+    DOWNLOADING,
+    SEEDING,
+    DOWNLOADING_AND_SEEDING,
+    PAUSED
+}
+
 data class TorrentId(
     val hash : String
 );
@@ -21,6 +35,7 @@ data class TorrentInfo(
     val name: String,
     val length: Long,
     val status: TorrentStatus,
+    val mode: TorrentMode,
     val filePath:String
 )
 {
