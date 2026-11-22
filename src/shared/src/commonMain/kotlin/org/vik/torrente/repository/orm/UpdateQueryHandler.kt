@@ -11,7 +11,7 @@ import org.vik.torrente.repository.models.TorrentStatus
 
 fun TorrentRepository.updateTorrent(torrent : TorrentInfo) : Boolean {
     return db.transactionWithResult {
-        db.updateQueries.updateTorrentById(torrent.name, torrent.tracker, torrent.length, torrent.status.ordinal.toLong(), torrent.hash);
+        db.updateQueries.updateTorrentById(torrent.name, torrent.tracker, torrent.length, torrent.status.ordinal.toLong(), torrent.filePath,torrent.hash);
         db.updateQueries.affectedRows().executeAsOne().toInt()==1;
     };
 }

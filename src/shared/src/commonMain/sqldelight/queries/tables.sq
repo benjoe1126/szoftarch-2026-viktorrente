@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS Torrents(
     tracker TEXT NOT NULL,
     name TEXT NOT NULL UNIQUE,
     length INTEGER NOT NULL,
-    status INTEGER NOT NULL
+    status INTEGER NOT NULL,
+    file_path TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Files(
