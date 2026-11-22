@@ -17,7 +17,7 @@ ViewModel instructions:
 [DOWNLOADING,SEEDING,DOWNLOADING_AND_SEEDING]: active or marked to start
 [PAUSED]: paused or marked to pause
  */
-enum class TorrentMode{
+enum class TorrentModeModel{
     INACTIVE,
     DOWNLOADING,
     SEEDING,
@@ -35,7 +35,7 @@ data class TorrentInfo(
     val name: String,
     val length: Long,
     val status: TorrentStatus,
-    val mode: TorrentMode,
+    val mode: TorrentModeModel,
     val filePath:String
 )
 {
