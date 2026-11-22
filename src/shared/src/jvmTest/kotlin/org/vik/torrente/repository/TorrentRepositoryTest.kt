@@ -261,7 +261,7 @@ class TorrentRepositoryTest {
     fun testInsertTorrent()
     {
         val tr=prepareTest();
-        val torrent= TorrentInfo("hashnigga67", "nav.gov.hu", "tax-free robux", 67, TorrentStatus.entries[0],TorrentModeModel.entries[1], "asdf");
+        val torrent= TorrentInfo("hashnigga67", "nav.gov.hu", "tax-free robux", 67, TorrentStatus.entries[0],TorrentModeModel.entries[1], "asdf", "asdf");
         assertTrue(tr.insertTorrent(torrent));
         assertEquals(torrent.tracker, tr.getTorrentByName(torrent.name)?.tracker);
     }
@@ -313,7 +313,7 @@ class TorrentRepositoryTest {
     {
         val tr=prepareTest();
 
-        val torrent=TorrentInfo("hashnigga67", "bigya.hu","john bigyahu", 67, TorrentStatus.entries[0],TorrentModeModel.entries[1], "asdf");
+        val torrent=TorrentInfo("hashnigga67", "bigya.hu","john bigyahu", 67, TorrentStatus.entries[0],TorrentModeModel.entries[1], "asdf", "asdf");
         val filesValid=listOf<FileInfo>(
             FileInfo(torrent.getId(),0,"john", 67),
             FileInfo(torrent.getId(),1,"bigyahu", 67),
@@ -352,7 +352,7 @@ class TorrentRepositoryTest {
     fun testUpdateTorrent()
     {
         val tr=prepareTest();
-        val torrent=TorrentInfo("hashnigga","rizzler.org","rizzler",67, TorrentStatus.entries[0], TorrentModeModel.entries[1], "asdf");
+        val torrent=TorrentInfo("hashnigga","rizzler.org","rizzler",67, TorrentStatus.entries[0], TorrentModeModel.entries[1], "asdf", "asdf");
         assertTrue(tr.updateTorrent(torrent));
         val newTorrent=tr.getTorrentById(torrent.getId());
         assertNotNull(newTorrent);

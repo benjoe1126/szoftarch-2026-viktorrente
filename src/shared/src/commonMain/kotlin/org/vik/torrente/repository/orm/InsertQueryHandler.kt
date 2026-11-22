@@ -7,7 +7,7 @@ import queries.TorrentDB.Companion.invoke
 
 //torrent id is not used
 fun TorrentRepository.insertTorrent(torrent:TorrentInfo) : Boolean{
-    return runCatching { db.insertQueries.insertTorrent(torrent.hash, torrent.name, torrent.tracker, torrent.length, torrent.status.ordinal.toLong(), torrent.mode.ordinal.toLong(), torrent.filePath) }.isSuccess;
+    return runCatching { db.insertQueries.insertTorrent(torrent.hash, torrent.name, torrent.tracker, torrent.length, torrent.status.ordinal.toLong(), torrent.mode.ordinal.toLong(), torrent.filePath, torrent.downloadDir) }.isSuccess;
 }
 
 fun TorrentRepository.insertFile(file:FileInfo) : Boolean{

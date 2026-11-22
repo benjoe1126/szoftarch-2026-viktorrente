@@ -1,6 +1,6 @@
 package org.vik.torrente.repository.models
 
-enum class TorrentStatus {
+enum class TorrentStatusModel {
     CHECKING,
     STARTING,
     DOWNLOADING,
@@ -34,9 +34,10 @@ data class TorrentInfo(
     val tracker: String,
     val name: String,
     val length: Long,
-    val status: TorrentStatus,
+    val status: TorrentStatusModel,
     val mode: TorrentModeModel,
-    val filePath:String
+    val filePath:String,
+    val downloadDir:String
 )
 {
     fun getId() : TorrentId {

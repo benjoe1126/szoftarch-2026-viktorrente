@@ -17,21 +17,22 @@ fun TorrentRepository.getTorrents() : List<TorrentInfo>{
             torrent.tracker,
             torrent.name,
             torrent.length,
-            TorrentStatus.entries[torrent.status.toInt()],
+            TorrentStatusModel.entries[torrent.status.toInt()],
             TorrentModeModel.entries[torrent.mode.toInt()],
-            torrent.file_path
+            torrent.file_path,
+            torrent.download_dir
         )
     };
 }
 
 fun TorrentRepository.getTorrentById(torrent : TorrentId) : TorrentInfo? {
     val result=db.selectQueries.queryTorrentById(torrent.hash).executeAsOneOrNull();
-    return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatus.entries[result.status.toInt()], TorrentModeModel.entries[result.mode.toInt()], result.file_path) else null;
+    return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatusModel.entries[result.status.toInt()], TorrentModeModel.entries[result.mode.toInt()], result.file_path, result.download_dir) else null;
 }
 
 fun TorrentRepository.getTorrentByName(torrentName : String):TorrentInfo?{
     val result=db.selectQueries.queryTorrentByName(torrentName).executeAsOneOrNull();
-    return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatus.entries[result.status.toInt()], TorrentModeModel.entries[result.mode.toInt()], result.file_path) else null;
+    return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatusModel.entries[result.status.toInt()], TorrentModeModel.entries[result.mode.toInt()], result.file_path, result.download_dir) else null;
 }
 
 fun TorrentRepository.getPieceById(piece : PieceId) : PieceInfo? {

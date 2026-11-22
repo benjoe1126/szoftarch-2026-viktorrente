@@ -2,13 +2,19 @@ package org.vik.torrente.scheduler
 
 import org.vik.torrente.repository.TorrentRepository
 import org.vik.torrente.repository.models.TorrentInfo
-import org.vik.torrente.repository.models.TorrentStatus
+import org.vik.torrente.repository.models.TorrentModeModel
+import org.vik.torrente.repository.models.TorrentStatusModel
 import org.vik.torrente.repository.orm.getTorrents
+import org.vik.torrente.torrent.StopReason
 import org.vik.torrente.torrent.TorrentCommand
 import org.vik.torrente.torrent.TorrentContext
 import org.vik.torrente.torrent.TorrentHandler
+import org.vik.torrente.torrent.TorrentMode
+import org.vik.torrente.torrent.TorrentStatus
+import org.vik.torrente.torrent.engine.PeerListener
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
+
 
 class TorrentScheduler(val repository: TorrentRepository) {
     private data class HandlerData(
@@ -17,10 +23,10 @@ class TorrentScheduler(val repository: TorrentRepository) {
         val paused:Boolean
     )
 
-    //previously active handlers, whose demise was not met via an error
-    private val stoppedHandlers =Collections.synchronizedList<HandlerData>(mutableListOf<HandlerData>());
-    //handlers that are active
-    private val activeHandlers = Collections.synchronizedList<HandlerData>(mutableListOf<HandlerData>());
+    private val peerListener= PeerListener(0);
+
+    //handlers that are active or paused
+    private val handlers = Collections.synchronizedList<HandlerData>(mutableListOf<HandlerData>());
 
     //listener thread
     private var dbListener:DBListener? = null;
@@ -75,67 +81,82 @@ class TorrentScheduler(val repository: TorrentRepository) {
 
     private fun startTorrent(torrent : TorrentInfo) : Boolean {
         //check if the handler is already active
-        val currentHandler=getActiveHandler(torrent.filePath);
-        //if(currentHandler!=null&&currentHandler.context.mode)
-            //return true;
+        val currentHandler=getHandler(torrent.filePath);
+        if(currentHandler!=null)
+            return false;
 
-        //check if the handler has history
-        val prevHandler = getStoppedHandler(torrent.filePath);
-        if(prevHandler!=null)
-            removeStoppedHandler(torrent.filePath);
+        //construct the handler
+        val context= TorrentContext(
+            torrent.filePath,
+            torrent.downloadDir,
+            convertModeFromModel(torrent.mode)!!,
+            this::onTorrentComplete,
+            this::onTorrentStop,
+            peerListener
+        )
 
-        //construct the new handler
         return false;
     }
 
     private fun signalStopTorrent(torrent:TorrentInfo) : Boolean
     {
         //check if the torrent is active
-        val handler=getActiveHandler(torrent.filePath);
+        val handler=getHandler(torrent.filePath);
         if(handler==null)
-            return false;
+            return true;
 
         //signal stop
         return handler.context.send(TorrentCommand.Stop)
     }
 
-    private fun getActiveHandler(downloadPath : String): HandlerData?
+    private fun onTorrentComplete(status:TorrentStatus) : Unit
+    {
+
+    }
+
+    private fun onTorrentStop(stopReason: StopReason)
+    {
+
+    }
+
+    private fun getHandler(downloadPath : String): HandlerData?
     {
         var handlerData:HandlerData? = null;
-        synchronized(activeHandlers) {
-            activeHandlers.forEach {
+        synchronized(handlers) {
+            handlers.forEach {
                 handler -> if(handler.context.torrentFilePath == downloadPath) handlerData = handler;
             }
         }
         return handlerData;
     }
 
-    private fun getStoppedHandler(downloadPath : String): HandlerData?
+    private fun removeHandler(downloadPath : String)
     {
-        var handlerData:HandlerData? = null;
-        synchronized(stoppedHandlers) {
-            stoppedHandlers.forEach {
-                    handler -> if(handler.context.torrentFilePath == downloadPath) handlerData = handler;
-            }
-        }
-        return handlerData;
-    }
-
-    private fun removeActiveHandler(downloadPath : String)
-    {
-        synchronized(activeHandlers) {
-            activeHandlers.removeIf{
+        synchronized(handlers) {
+            handlers.removeIf{
                 it.context.torrentFilePath == downloadPath;
             }
         }
     }
 
-    private fun removeStoppedHandler(downloadPath : String)
-    {
-        synchronized(stoppedHandlers) {
-            stoppedHandlers.removeIf{
-                it.context.torrentFilePath == downloadPath;
-            }
-        }
-    }
+}
+
+private fun compareModeWithModel(mode:TorrentMode,modelMode: TorrentModeModel) : Boolean{
+    if(mode== TorrentMode.DOWNLOAD&&modelMode== TorrentModeModel.DOWNLOADING)
+        return true;
+    if(mode== TorrentMode.DOWNLOAD_AND_SEED&&modelMode== TorrentModeModel.DOWNLOADING_AND_SEEDING)
+        return true;
+    if(mode== TorrentMode.SEED&&modelMode== TorrentModeModel.SEEDING)
+        return true;
+    return false;
+}
+
+private fun convertModeFromModel(modelMode: TorrentModeModel) : TorrentMode? {
+    if(modelMode == TorrentModeModel.DOWNLOADING)
+        return TorrentMode.DOWNLOAD;
+    if(modelMode == TorrentModeModel.SEEDING)
+        return TorrentMode.SEED;
+    if(modelMode==TorrentModeModel.DOWNLOADING_AND_SEEDING)
+        return TorrentMode.DOWNLOAD_AND_SEED;
+    return null;
 }
