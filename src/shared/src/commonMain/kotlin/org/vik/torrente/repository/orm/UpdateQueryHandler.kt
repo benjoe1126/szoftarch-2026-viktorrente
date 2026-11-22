@@ -7,11 +7,11 @@ import org.vik.torrente.repository.models.PeerInfo
 import org.vik.torrente.repository.models.PieceId
 import org.vik.torrente.repository.models.PieceInfo
 import org.vik.torrente.repository.models.TorrentInfo
-import org.vik.torrente.repository.models.TorrentStatus
+import org.vik.torrente.repository.models.TorrentStatusModel
 
 fun TorrentRepository.updateTorrent(torrent : TorrentInfo) : Boolean {
     return db.transactionWithResult {
-        db.updateQueries.updateTorrentById(torrent.name, torrent.tracker, torrent.length, torrent.status.ordinal.toLong(), torrent.mode.ordinal.toLong(), torrent.filePath,torrent.hash);
+        db.updateQueries.updateTorrentById(torrent.name, torrent.tracker, torrent.length, torrent.status.ordinal.toLong(), torrent.mode.ordinal.toLong(), torrent.filePath,torrent.downloadDir,torrent.hash);
         db.updateQueries.affectedRows().executeAsOne().toInt()==1;
     };
 }

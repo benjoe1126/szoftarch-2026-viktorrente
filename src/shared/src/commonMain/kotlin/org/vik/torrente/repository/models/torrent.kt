@@ -1,6 +1,6 @@
 package org.vik.torrente.repository.models
 
-enum class TorrentStatus {
+enum class TorrentStatusModel {
     CHECKING,
     STARTING,
     DOWNLOADING,
@@ -17,7 +17,7 @@ ViewModel instructions:
 [DOWNLOADING,SEEDING,DOWNLOADING_AND_SEEDING]: active or marked to start
 [PAUSED]: paused or marked to pause
  */
-enum class TorrentMode{
+enum class TorrentModeModel{
     INACTIVE,
     DOWNLOADING,
     SEEDING,
@@ -34,9 +34,10 @@ data class TorrentInfo(
     val tracker: String,
     val name: String,
     val length: Long,
-    val status: TorrentStatus,
-    val mode: TorrentMode,
-    val filePath:String
+    val status: TorrentStatusModel,
+    val mode: TorrentModeModel,
+    val filePath:String,
+    val downloadDir:String
 )
 {
     fun getId() : TorrentId {
