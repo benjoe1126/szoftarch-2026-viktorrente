@@ -14,8 +14,8 @@ clearPeerHasPiece:
 DELETE FROM PeerHasPiece;
 
 fillTorrents:
-INSERT INTO Torrents (hash, name, tracker, length, status)
-VALUES ("hashnigga", "nigga", "nigga.org", 67, 0);
+INSERT INTO Torrents (hash, name, tracker, length, status, file_path)
+VALUES ("hashnigga", "nigga", "nigga.org", 67, 0, "/homework/sussy.torrent");
 
 fillFiles:
 INSERT INTO Files (name, length, number, torrent_hash)

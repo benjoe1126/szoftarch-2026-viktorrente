@@ -20,7 +20,8 @@ data class TorrentInfo(
     val tracker: String,
     val name: String,
     val length: Long,
-    val status: TorrentStatus
+    val status: TorrentStatus,
+    val filePath:String
 )
 {
     fun getId() : TorrentId {
