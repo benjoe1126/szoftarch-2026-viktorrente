@@ -89,7 +89,7 @@ class TorrentHandler(private val context: TorrentContext) {
             withContext(NonCancellable) {
                 stopEngine()
                 publishStatus(TorrentPhase.STOPPED, reason)
-                context.onStop(reason)
+                context.onStop(context, reason)
             }
         }
     }
@@ -118,7 +118,7 @@ class TorrentHandler(private val context: TorrentContext) {
 
             if (!completed && engine.isComplete) {
                 completed = true
-                context.onComplete(publishStatus(TorrentPhase.SEEDING))
+                context.onComplete(context, publishStatus(TorrentPhase.SEEDING))
                 if (context.mode == TorrentMode.DOWNLOAD) return StopReason.Completed
             }
 

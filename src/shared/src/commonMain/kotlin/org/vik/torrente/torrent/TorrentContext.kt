@@ -98,8 +98,8 @@ class TorrentContext(
     val torrentFilePath: String,
     val downloadDir: String = "downloads",
     val mode: TorrentMode = TorrentMode.DOWNLOAD,
-    val onComplete: (TorrentStatus) -> Unit = {},
-    val onStop: (StopReason) -> Unit = {},
+    val onComplete: (TorrentContext, TorrentStatus) -> Unit = {_,_->},
+    val onStop: (TorrentContext,StopReason) -> Unit = {_,_->},
     val peerListener: PeerListener? = null,
 ) {
     private val commandChannel = Channel<TorrentCommand>(Channel.UNLIMITED)
