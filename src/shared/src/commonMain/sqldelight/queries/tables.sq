@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS Torrents(
     name TEXT NOT NULL UNIQUE,
     length INTEGER NOT NULL,
     status INTEGER NOT NULL,
+    mode INTEGER NOT NULL,
     file_path TEXT NOT NULL
 );
 

@@ -30,8 +30,8 @@ import kotlin.time.TimeSource
  */
 
 data class TorrentSnapshot(
-    val downloaded: Long,
-    val uploaded: Long,
+    val piecesDownloaded:ByteArray,
+    val piecesDownloading:ByteArray,
     val peers: List<PeerAddresses>,
     val numLeechers: Int,
     val numSeeders: Int
@@ -59,8 +59,8 @@ class TorrentHandler(private val context: TorrentContext) {
     fun torrentSnapshot(): TorrentSnapshot? {
         return engine?.let {
             TorrentSnapshot(
-                downloaded = it.downloaded,
-                uploaded = it.uploaded,
+                piecesDownloaded = it.downloadedPieces,
+                piecesDownloading = it.downloadingPieces,
                 peers = it.peers,
                 numLeechers = it.numLeechers,
                 numSeeders = it.numSeeders

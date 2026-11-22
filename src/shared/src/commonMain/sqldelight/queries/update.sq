@@ -1,6 +1,6 @@
 updateTorrentById:
 UPDATE Torrents
-SET name=:name, tracker=:tracker, length=:length, status=:status, file_path=:file_path
+SET name=:name, tracker=:tracker, length=:length, status=:status, mode=:mode, file_path=:file_path
 WHERE hash=:torrent_hash;
 
 updatePieceById:

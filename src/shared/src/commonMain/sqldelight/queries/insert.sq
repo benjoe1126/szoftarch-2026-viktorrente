@@ -1,6 +1,6 @@
 insertTorrent:
-INSERT INTO Torrents (hash, name, tracker, length, status, file_path)
-VALUES (:hash, :name,:tracker,:length,:status, :file_path);
+INSERT INTO Torrents (hash, name, tracker, length, status, mode, file_path)
+VALUES (:hash, :name,:tracker,:length,:status,:mode,:file_path);
 
 insertPiece:
 INSERT INTO Pieces (hash, length, torrent_hash, number, status, download_path)

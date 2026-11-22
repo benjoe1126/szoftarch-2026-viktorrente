@@ -70,6 +70,10 @@ class TorrentEngine(
     private val havePieces = BitSet(numPieces)
     private val assignedPieces = BitSet(numPieces) // pieces some peer is currently downloading
     private val sessions = mutableMapOf<PeerConnection, PeerSession>()
+    val downloadedPieces : ByteArray
+        get() = havePieces.toByteArray()
+    val downloadingPieces: ByteArray
+        get() = assignedPieces.toByteArray()
 
     private lateinit var _peers: List<PeerAddresses>
 
