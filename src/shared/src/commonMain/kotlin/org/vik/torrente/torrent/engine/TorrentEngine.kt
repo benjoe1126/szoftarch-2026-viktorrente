@@ -64,11 +64,24 @@ class TorrentEngine(
 
     private val storage = PieceStorage(metadata, File(downloadDir))
 
+
     // All fields below are guarded by `lock`
     private val lock = Any()
     private val havePieces = BitSet(numPieces)
     private val assignedPieces = BitSet(numPieces) // pieces some peer is currently downloading
     private val sessions = mutableMapOf<PeerConnection, PeerSession>()
+
+    private lateinit var _peers: List<PeerAddresses>
+
+    private var _numLeechers: Int = 0
+
+    private var _numSeeders: Int = 0
+    val peers: List<PeerAddresses>
+        get() = _peers
+    val numLeechers: Int
+        get() = _numLeechers
+    val numSeeders: Int
+        get() = _numSeeders
     private val pendingPeers = ArrayDeque<PeerAddresses>() // known peers we haven't tried yet
     private var connecting = 0 // connection attempts in progress
     private var downloading = false
@@ -173,8 +186,11 @@ class TorrentEngine(
         for (url in metadata.trackers.filter { it.startsWith("udp://") }) {
             try {
                 val response = announce(url, event)
+                this@TorrentEngine._numLeechers = response.leechers
+                this@TorrentEngine._numSeeders = response.seeders
+                this@TorrentEngine._peers = response.peerAddresses.filter { it.address != 0 && it.portNumber != 0 }
                 println("[TorrentEngine] Tracker $url returned ${response.peerAddresses.size} peers (seeders=${response.seeders}, leechers=${response.leechers})")
-                return@withContext response.peerAddresses.filter { it.address != 0 && it.portNumber != 0 }
+                return@withContext this@TorrentEngine.peers
             } catch (e: Exception) {
                 println("[TorrentEngine] Tracker $url failed — ${e.message}")
             }

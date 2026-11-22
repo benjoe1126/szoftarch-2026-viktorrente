@@ -1,5 +1,6 @@
 package org.vik.torrente.torrent
 
+import io.ktor.utils.io.locks.reentrantLock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,15 @@ import kotlin.time.TimeSource
  * Pausing shuts the engine down; resuming starts a new one seeded with the pieces the old one had,
  * so no data is rechecked or downloaded again.
  */
+
+data class TorrentSnapshot(
+    val downloaded: Long,
+    val uploaded: Long,
+    val peers: List<PeerAddresses>,
+    val numLeechers: Int,
+    val numSeeders: Int
+)
+
 class TorrentHandler(private val context: TorrentContext) {
     companion object {
         private val STATUS_INTERVAL = 1.seconds
@@ -45,6 +55,19 @@ class TorrentHandler(private val context: TorrentContext) {
     // Counters of engines shut down by a pause, so the status shows totals
     private var previousDownloaded = 0L
     private var previousUploaded = 0L
+
+    fun torrentSnapshot(): TorrentSnapshot? {
+        return engine?.let {
+            TorrentSnapshot(
+                downloaded = it.downloaded,
+                uploaded = it.uploaded,
+                peers = it.peers,
+                numLeechers = it.numLeechers,
+                numSeeders = it.numSeeders
+            )
+        }
+    }
+
 
     /** Launches [run] in [scope]. Cancelling the returned job stops the torrent with [StopReason.Cancelled]. */
     fun start(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) { run() }
