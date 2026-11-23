@@ -73,63 +73,89 @@ class TorrentScheduler(val repository: TorrentRepository) {
         override fun run() {
             while(!shouldStop.get())
             {
-                //sleepy time
-                sleep(100);
-
-                //check the torrent states in the repository
-                val torrents=repository.getTorrents();
-                for(torrent in torrents)
+                try
                 {
-                    //check if action should be taken
-                    val handler=scheduler.getHandler(torrent.filePath,torrent.downloadDir)
-                    if(handler != null)
-                    {
-                        when(torrent.mode)
-                        {
-                            TorrentModeModel.DOWNLOADING -> scheduler.signalResumeTorrent(torrent);
-                            TorrentModeModel.SEEDING-> scheduler.signalResumeTorrent(torrent);
-                            TorrentModeModel.DOWNLOADING_AND_SEEDING -> scheduler.signalResumeTorrent(torrent);
-                            TorrentModeModel.PAUSED -> scheduler.signalPauseTorrent(torrent);
-                            TorrentModeModel.INACTIVE -> scheduler.signalStopTorrent(torrent);
-                        }
-                    }
-                    else
-                    {
-                        when(torrent.mode)
-                        {
-                            TorrentModeModel.DOWNLOADING -> scheduler.startTorrent(torrent);
-                            TorrentModeModel.SEEDING-> scheduler.startTorrent(torrent);
-                            TorrentModeModel.DOWNLOADING_AND_SEEDING -> scheduler.startTorrent(torrent);
-                            else->{}
-                        }
-                    }
-                }
+                    //sleepy time
+                    sleep(100);
 
-                //query the handler states
-                val handlersCopy=mutableListOf<HandlerData>();
-                synchronized(scheduler.handlers)
-                {
-                    scheduler.handlers.forEach{handler->handlersCopy.add(handler)}
-                }
-                handlersCopy.forEach {
-                    handler->
-                    val snapshot=handler.handler.torrentSnapshot()
-                    val torrents=scheduler.repository.getTorrentsByFilenameAndDownloaddir(handler.context.torrentFilePath,handler.context.downloadDir)
-                    if(torrents.isEmpty()||snapshot==null)
-                        return;
-                    scheduler.repository.getPeersByTorrent(torrents[0].getId()).forEach { p->scheduler.repository.deletePeer(p.getId()) }
-                    snapshot.peers.forEach { p-> scheduler.repository.insertPeer(PeerInfo(torrents[0].getId(),p.host+":"+p.portNumber.toString(),p.host+":"+p.portNumber.toString(),PeerStatus.SEEDING))}
-                    scheduler.repository.getPiecesByTorrent(torrents[0].getId()).forEach{
-                        p->
-                        if(snapshot.piecesDownloaded[p.number.toInt()].toInt()==1)
-                            scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.AVAILABLE,p.downloadPath));
-                        else if(snapshot.piecesDownloading[p.number.toInt()].toInt()==1)
-                            scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.DOWNLOADING,p.downloadPath));
+                    //check the torrent states in the repository
+                    val torrents=repository.getTorrents();
+                    for(torrent in torrents)
+                    {
+                        //check if action should be taken
+                        val handler=scheduler.getHandler(torrent.filePath,torrent.downloadDir)
+                        if(handler != null)
+                        {
+                            when(torrent.mode)
+                            {
+                                TorrentModeModel.DOWNLOADING -> scheduler.signalResumeTorrent(torrent);
+                                TorrentModeModel.SEEDING-> scheduler.signalResumeTorrent(torrent);
+                                TorrentModeModel.DOWNLOADING_AND_SEEDING -> scheduler.signalResumeTorrent(torrent);
+                                TorrentModeModel.PAUSED_DOWNLOADING -> scheduler.signalPauseTorrent(torrent);
+                                TorrentModeModel.PAUSED_DOWNLOADING_AND_SEEDING -> scheduler.signalPauseTorrent(torrent);
+                                TorrentModeModel.PAUSED_SEEDING -> scheduler.signalPauseTorrent(torrent);
+                                TorrentModeModel.INACTIVE -> scheduler.signalStopTorrent(torrent);
+                            }
+                        }
                         else
-                            scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
+                        {
+                            when(torrent.mode)
+                            {
+                                TorrentModeModel.DOWNLOADING -> scheduler.startTorrent(torrent);
+                                TorrentModeModel.SEEDING-> scheduler.startTorrent(torrent);
+                                TorrentModeModel.DOWNLOADING_AND_SEEDING -> scheduler.startTorrent(torrent);
+                                else->{}
+                            }
+                        }
                     }
+
+                    //query the handler states
+                    val handlersCopy=mutableListOf<HandlerData>();
+                    synchronized(scheduler.handlers)
+                    {
+                        scheduler.handlers.forEach{handler->handlersCopy.add(handler)}
+                    }
+                    handlersCopy.forEach {
+                        handler->
+                        val snapshot=handler.handler.torrentSnapshot()
+                        val torrents=scheduler.repository.getTorrentsByFilenameAndDownloaddir(handler.context.torrentFilePath,handler.context.downloadDir)
+                        if(torrents.isEmpty()||snapshot==null)
+                            return@forEach;
+                        scheduler.repository.getPeersByTorrent(torrents[0].getId()).forEach { p->scheduler.repository.deletePeer(p.getId()) }
+                        snapshot.peers.forEach { p-> scheduler.repository.insertPeer(PeerInfo(torrents[0].getId(),p.host+":"+p.portNumber.toString(),p.host+":"+p.portNumber.toString(),PeerStatus.SEEDING))}
+                        scheduler.repository.getPiecesByTorrent(torrents[0].getId()).forEach{
+                            p->
+                            if(snapshot.piecesDownloaded.hasBit(p.number.toInt()))
+                                scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.AVAILABLE,p.downloadPath));
+                            else if(snapshot.piecesDownloading.hasBit(p.number.toInt()))
+                                scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.DOWNLOADING,p.downloadPath));
+                            else
+                                scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
+                        }
+                    }
+                }
+                catch(e: InterruptedException)
+                {
+                    if(!shouldStop.get())
+                    {
+                        System.err.println("[TorrentScheduler] Database listener was interrupted unexpectedly")
+                        e.printStackTrace()
+                    }
+                    return
+                }
+                catch(e: Exception)
+                {
+                    System.err.println("[TorrentScheduler] Database listener cycle failed: ${e.message}")
+                    e.printStackTrace()
                 }
             }
+        }
+
+        private fun ByteArray.hasBit(index: Int): Boolean {
+            if(index < 0)
+                return false
+            val byteIndex = index / 8
+            return byteIndex < size && (this[byteIndex].toInt() and (1 shl (index % 8))) != 0
         }
 
         fun signalStop()
@@ -336,7 +362,9 @@ class TorrentScheduler(val repository: TorrentRepository) {
         when(this)
         {
             TorrentModeModel.DOWNLOADING->return TorrentStatusModel.DOWNLOADING;
-            TorrentModeModel.PAUSED->return TorrentStatusModel.PAUSED;
+            TorrentModeModel.PAUSED_DOWNLOADING->return TorrentStatusModel.PAUSED;
+            TorrentModeModel.PAUSED_DOWNLOADING_AND_SEEDING->return TorrentStatusModel.PAUSED;
+            TorrentModeModel.PAUSED_SEEDING->return TorrentStatusModel.PAUSED
             TorrentModeModel.SEEDING->return TorrentStatusModel.SEEDING;
             TorrentModeModel.DOWNLOADING_AND_SEEDING -> return TorrentStatusModel.DOWNLOADING;
             else->return TorrentStatusModel.STOPPED;

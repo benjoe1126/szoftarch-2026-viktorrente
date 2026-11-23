@@ -27,6 +27,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(ktorLibs.network)
+            implementation(libs.filekit.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

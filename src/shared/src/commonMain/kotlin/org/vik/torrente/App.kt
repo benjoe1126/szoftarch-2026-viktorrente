@@ -1,49 +1,208 @@
 package org.vik.torrente
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-
-import viktorrente.shared.generated.resources.Res
-import viktorrente.shared.generated.resources.compose_multiplatform
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.launch
+import org.vik.torrente.repository.TorrentRepository
+import org.vik.torrente.scheduler.TorrentScheduler
+import org.vik.torrente.ui.components.AddTorrentDialog
+import org.vik.torrente.ui.components.TopBar
+import org.vik.torrente.ui.components.TorrentList
+import org.vik.torrente.ui.components.TorrentDashboard
+import org.vik.torrente.ui.model.ParsedTorrentInfo
+import org.vik.torrente.repository.models.TorrentModeModel
+import org.vik.torrente.viewmodel.TorrentUIViewModel
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.unit.dp
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerType
 
 @Composable
-@Preview
-fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+fun App(
+    defaultDownloadDirectory: String,
+    onOpenDirectory: (String) -> Unit,
+    repository: TorrentRepository,
+) {
+    // Stock Material 3 (Material You) baseline color schemes
+    val colorScheme = if (isSystemInDarkTheme()) {
+        darkColorScheme()
+    } else {
+        lightColorScheme()
+    }
+
+    MaterialTheme(colorScheme = colorScheme) {
+        val scheduler = remember(repository) { TorrentScheduler(repository) }
+        DisposableEffect(scheduler) {
+            scheduler.start()
+            onDispose { scheduler.stop() }
+        }
+
+        val viewModel: TorrentUIViewModel = viewModel(
+            factory = remember(repository) {
+                viewModelFactory {
+                    initializer { TorrentUIViewModel(repository) }
                 }
             }
+        )
+        val torrents by viewModel.torrents.collectAsState()
+        val error by viewModel.error.collectAsState()
+        val snackbarHostState = remember { SnackbarHostState() }
+        val coroutineScope = rememberCoroutineScope()
+        var pendingTorrent by remember { mutableStateOf<ParsedTorrentInfo?>(null) }
+        var selectedTorrentId by remember { mutableStateOf<String?>(null) }
+        var pendingResumeTorrentId by remember { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(error) {
+            error?.let {
+                snackbarHostState.showSnackbar(it)
+                viewModel.clearError()
+            }
+        }
+
+        val torrentFilePicker = rememberFilePickerLauncher(
+            type = PickerType.File(extensions = listOf("torrent")),
+            title = "Select .torrent file"
+        ) { file ->
+            if (file != null) {
+                val path = file.path
+                if (path != null) {
+                    coroutineScope.launch {
+                        pendingTorrent = viewModel.parseTorrent(path)
+                    }
+                }
+            }
+        }
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopBar(
+                    torrents = torrents,
+                    onAddTorrentClick = {
+                        torrentFilePicker.launch()
+                    }
+                )
+            }
+        ) { innerPadding ->
+            Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                TorrentList(
+                    torrents = torrents,
+                    onTogglePlayPause = { id ->
+                        val torrent = viewModel.getTorrentInfo(id)
+                        when (torrent?.mode) {
+                            null -> Unit
+                            TorrentModeModel.DOWNLOADING,
+                            TorrentModeModel.DOWNLOADING_AND_SEEDING,
+                            TorrentModeModel.SEEDING -> viewModel.pauseTorrent(id)
+                            TorrentModeModel.PAUSED_DOWNLOADING,
+                            TorrentModeModel.PAUSED_DOWNLOADING_AND_SEEDING,
+                            TorrentModeModel.PAUSED_SEEDING -> viewModel.resumeTorrent(id)
+                            TorrentModeModel.INACTIVE -> pendingResumeTorrentId = id
+                        }
+                    },
+                    onStop = viewModel::stopTorrent,
+                    onDelete = { id -> 
+                        viewModel.deleteTorrent(id)
+                        if (selectedTorrentId == id) selectedTorrentId = null 
+                    },
+                    onOpenFolder = { path -> onOpenDirectory(path) },
+                    onTorrentSelected = { id -> 
+                        selectedTorrentId = if (selectedTorrentId == id) null else id 
+                    },
+                    onAddTorrentClick = {
+                        torrentFilePicker.launch()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                selectedTorrentId?.let { id ->
+                    val selectedTorrent = torrents.find { it.id == id }
+                    if (selectedTorrent != null) {
+                        HorizontalDivider()
+                        TorrentDashboard(
+                            torrent = selectedTorrent,
+                            onClose = { selectedTorrentId = null },
+                            modifier = Modifier.height(300.dp)
+                        )
+                    } else {
+                        selectedTorrentId = null
+                    }
+                }
+            }
+
+            // Add Torrent Dialog (activated when a .torrent file is picked)
+            pendingTorrent?.let { parsedInfo ->
+                AddTorrentDialog(
+                    parsedInfo = parsedInfo,
+                    initialDestinationPath = defaultDownloadDirectory,
+                    onConfirm = { destinationPath, mode ->
+                        viewModel.addTorrent(parsedInfo, destinationPath, mode)
+                        pendingTorrent = null
+                    },
+                    onDismiss = {
+                        pendingTorrent = null
+                    }
+                )
+            }
+
+            pendingResumeTorrentId?.let { id ->
+                AlertDialog(
+                    onDismissRequest = { pendingResumeTorrentId = null },
+                    title = { Text("Restart torrent") },
+                    text = {
+                        androidx.compose.foundation.layout.Column {
+                            Text("Choose how this torrent should run.")
+                            listOf(
+                                TorrentModeModel.DOWNLOADING to "Download",
+                                TorrentModeModel.DOWNLOADING_AND_SEEDING to "Download & Seed",
+                                TorrentModeModel.SEEDING to "Seed Only",
+                            ).forEach { (mode, label) ->
+                                TextButton(
+                                    onClick = {
+                                        viewModel.resumeTorrent(id, mode)
+                                        pendingResumeTorrentId = null
+                                    }
+                                ) {
+                                    Text(label)
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {},
+                    dismissButton = {
+                        TextButton(onClick = { pendingResumeTorrentId = null }) {
+                            Text("Cancel")
+                        }
+                    },
+                )
+            }
+
         }
     }
 }
