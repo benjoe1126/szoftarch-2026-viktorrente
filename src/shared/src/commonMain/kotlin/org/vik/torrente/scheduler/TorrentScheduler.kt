@@ -28,9 +28,11 @@ import org.vik.torrente.torrent.TorrentMode
 import org.vik.torrente.torrent.TorrentPhase
 import org.vik.torrente.torrent.TorrentStatus
 import org.vik.torrente.torrent.engine.PeerListener
+import java.util.BitSet
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Handler
+import kotlin.reflect.typeOf
 
 
 class TorrentScheduler(val repository: TorrentRepository) {
@@ -71,12 +73,13 @@ class TorrentScheduler(val repository: TorrentRepository) {
         val shouldStop = AtomicBoolean(false);
 
         override fun run() {
+            var cyclesUntilNextUpdate=0;
             while(!shouldStop.get())
             {
                 try
                 {
                     //sleepy time
-                    sleep(100);
+                    sleep(50);
 
                     //check the torrent states in the repository
                     val torrents=repository.getTorrents();
@@ -110,7 +113,12 @@ class TorrentScheduler(val repository: TorrentRepository) {
                     }
 
                     //query the handler states
-                    scheduler.updateRepository();
+                    cyclesUntilNextUpdate--;
+                    if(cyclesUntilNextUpdate<=0)
+                    {
+                        cyclesUntilNextUpdate=5;
+                        scheduler.updateRepository();
+                    }
                 }
                 catch(e: InterruptedException)
                 {
@@ -160,7 +168,6 @@ class TorrentScheduler(val repository: TorrentRepository) {
                     repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.DOWNLOADING,p.downloadPath));
                 else
                     repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
-                    repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
             }
         }
     }
@@ -186,6 +193,7 @@ class TorrentScheduler(val repository: TorrentRepository) {
 
         handler.start(CoroutineScope(Dispatchers.IO));
 
+        println("[TorrentScheduler] Torrent "+torrent.filePath+" started");
         return true;
     }
 
@@ -197,7 +205,9 @@ class TorrentScheduler(val repository: TorrentRepository) {
             return true;
 
         //signal stop
-        return handlerData.context.send(TorrentCommand.Stop)
+        val isSuccess=handlerData.context.send(TorrentCommand.Stop)
+        if(isSuccess) println("[TorrentScheduler] Torrent "+torrent.filePath+" signaled to stop");
+        return isSuccess;
     }
 
     private fun signalPauseTorrent(torrent:TorrentInfo) : Boolean
@@ -238,23 +248,13 @@ class TorrentScheduler(val repository: TorrentRepository) {
 
         when(context.mode)
         {
-            //check if the torrent is completed
-            TorrentMode.DOWNLOAD->{
-                val torrents=repository.getTorrentsByFilenameAndDownloaddir(context.torrentFilePath,context.downloadDir);
-                if(torrents.isNotEmpty())
-                {
-                    val t = torrents[0];
-                    repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length,status.phase.toModel(),
-                        TorrentModeModel.INACTIVE,t.filePath,t.downloadDir));
-                }
-            }
             //if DOWNLOAD_AND_SEED, update db entry to SEED
             TorrentMode.DOWNLOAD_AND_SEED->{
                 val torrents=repository.getTorrentsByFilenameAndDownloaddir(context.torrentFilePath,context.downloadDir);
                 if(torrents.isNotEmpty())
                 {
                     val t = torrents[0];
-                    repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length,status.phase.toModel(),
+                    repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length, TorrentStatusModel.SEEDING,
                         TorrentModeModel.SEEDING,t.filePath,t.downloadDir));
                 }
             }
@@ -265,25 +265,31 @@ class TorrentScheduler(val repository: TorrentRepository) {
     private fun onTorrentStop(context:TorrentContext, stopReason: StopReason)
     {
         //check if the handler exists
-        val handler=getHandlerByContext(context);
-        if(handler==null)
-            return;
-
+        val handler = getHandlerByContext(context) ?: return;
         //remove its entry
         handlers.remove(handler);
 
-        //if failed, reset its data from the database
+        //if failed, reset its data from the database, otherwise set its status accordingly
+        var torrentStatus=TorrentStatusModel.STOPPED;
         if(stopReason is StopReason.Failed)
+            torrentStatus= TorrentStatusModel.ERROR;
+        if(stopReason is StopReason.Completed)
+            torrentStatus= TorrentStatusModel.COMPLETED;
+
+        val torrents=repository.getTorrentsByFilenameAndDownloaddir(context.torrentFilePath, context.downloadDir);
+        if(torrents.isNotEmpty())
         {
-            val torrents=repository.getTorrentsByFilenameAndDownloaddir(context.torrentFilePath, context.downloadDir);
-            if(torrents.isNotEmpty())
-            {
-                val t=torrents[0];
-                repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length, TorrentStatusModel.ERROR,
-                    TorrentModeModel.INACTIVE,t.filePath,t.downloadDir));
-                repository.getPeersByTorrent(t.getId()).forEach{p->repository.deletePeer(p.getId())}
+            //update torrent info
+            val t=torrents[0];
+            repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length, torrentStatus,
+                TorrentModeModel.INACTIVE,t.filePath,t.downloadDir));
+            //remove peers
+            repository.getPeersByTorrent(t.getId()).forEach{p->repository.deletePeer(p.getId())}
+            //set all pieces to not available if an error occured
+            if(torrentStatus== TorrentStatusModel.ERROR)
                 repository.getPiecesByTorrent(t.getId()).forEach{p->repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath))}
-            }
+
+            println("[TorrentScheduler] Torrent "+torrents+" stopped")
         }
     }
 
