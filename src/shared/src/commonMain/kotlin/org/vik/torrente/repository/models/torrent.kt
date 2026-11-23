@@ -22,7 +22,9 @@ enum class TorrentModeModel{
     DOWNLOADING,
     SEEDING,
     DOWNLOADING_AND_SEEDING,
-    PAUSED
+    PAUSED_DOWNLOADING,
+    PAUSED_DOWNLOADING_AND_SEEDING,
+    PAUSED_SEEDING,
 }
 
 data class TorrentId(

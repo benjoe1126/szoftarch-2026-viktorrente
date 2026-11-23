@@ -20,17 +20,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.vik.torrente.model.Torrent
+import org.vik.torrente.ui.model.Torrent
 import org.vik.torrente.ui.icons.AppIcons
 
 @Composable
 fun TorrentList(
     torrents: List<Torrent>,
     onTogglePlayPause: (String) -> Unit,
+    onStop: (String) -> Unit,
     onDelete: (String) -> Unit,
     onOpenFolder: (String) -> Unit,
-    onReannounce: (String) -> Unit,
-    onAddPeer: (String, String) -> Unit,
     onTorrentSelected: (String) -> Unit,
     onAddTorrentClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -91,10 +90,9 @@ fun TorrentList(
                 TorrentItemCard(
                     torrent = torrent,
                     onTogglePlayPause = onTogglePlayPause,
+                    onStop = onStop,
                     onDelete = onDelete,
                     onOpenFolder = onOpenFolder,
-                    onReannounce = onReannounce,
-                    onAddPeer = onAddPeer,
                     onClick = { onTorrentSelected(torrent.id) }
                 )
             }

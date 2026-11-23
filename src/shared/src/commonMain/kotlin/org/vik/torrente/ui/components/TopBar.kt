@@ -21,8 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.vik.torrente.model.Torrent
-import org.vik.torrente.model.TorrentStatus
+import org.vik.torrente.ui.model.Torrent
 import org.vik.torrente.ui.icons.AppIcons
 import org.vik.torrente.ui.util.Formatters
 

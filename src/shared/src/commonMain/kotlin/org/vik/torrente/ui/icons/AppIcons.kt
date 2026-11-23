@@ -53,6 +53,24 @@ object AppIcons {
         }.build()
     }
 
+    val Stop: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Stop",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(6f, 6f)
+                horizontalLineTo(18f)
+                verticalLineTo(18f)
+                horizontalLineTo(6f)
+                close()
+            }
+        }.build()
+    }
+
     val Folder: ImageVector by lazy {
         ImageVector.Builder(
             name = "Folder",

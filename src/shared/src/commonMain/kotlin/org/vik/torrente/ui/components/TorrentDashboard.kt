@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.vik.torrente.model.Torrent
+import org.vik.torrente.ui.model.Torrent
 import org.vik.torrente.ui.util.Formatters
 
 import org.vik.torrente.ui.icons.AppIcons
@@ -67,6 +67,7 @@ fun GeneralTab(torrent: Torrent) {
         Spacer(Modifier.height(8.dp))
         Text("Save Path: ${torrent.destinationPath}")
         Text("Downloaded: ${Formatters.formatBytes(torrent.downloadedBytes)} / ${Formatters.formatBytes(torrent.totalBytes)}")
+        Text("Pieces: ${torrent.pieceCount}")
         Text("Status: ${torrent.status}")
         // can add more metadata here
     }
@@ -80,17 +81,13 @@ fun TrackersTab(torrent: Torrent) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Text("URL", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
-                    Text("Status", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                    Text("Peers", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Text("URL", fontWeight = FontWeight.Bold)
                 }
                 HorizontalDivider()
             }
             items(torrent.trackers) { tracker ->
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                    Text(tracker.url, modifier = Modifier.weight(2f))
-                    Text(tracker.status, modifier = Modifier.weight(1f))
-                    Text(tracker.peers.toString(), modifier = Modifier.weight(1f))
+                    Text(tracker.url)
                 }
             }
         }
@@ -101,44 +98,18 @@ fun TrackersTab(torrent: Torrent) {
 fun PeersTab(torrent: Torrent) {
     if (torrent.peerList.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No active peers.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("No peer addresses available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                Text("IP", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
-                Text("Client", modifier = Modifier.weight(2f), style = MaterialTheme.typography.labelMedium)
-                Text("Flags", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-                Text("%", modifier = Modifier.weight(0.8f), style = MaterialTheme.typography.labelMedium)
-                Text("Down Speed", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
-                Text("Up Speed", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
-                Text("Downloaded", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
-                Text("Uploaded", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelMedium)
+                Text("Address", style = MaterialTheme.typography.labelMedium)
             }
             HorizontalDivider()
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(torrent.peerList, key = { it.ipAddress + it.port }) { peer ->
+                items(torrent.peerList, key = { it.address }) { peer ->
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(peer.ipAddress, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
-                        Text(peer.client, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
-                        Text(peer.flags, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            text = if (peer.progress >= 1.0f) "100.0" else "%.1f".format(peer.progress * 100f),
-                            modifier = Modifier.weight(0.8f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            text = if (peer.downloadSpeed == 0L) "" else Formatters.formatSpeed(peer.downloadSpeed),
-                            modifier = Modifier.weight(1.5f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            text = if (peer.uploadSpeed == 0L) "" else Formatters.formatSpeed(peer.uploadSpeed),
-                            modifier = Modifier.weight(1.5f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(Formatters.formatBytes(peer.downloaded), modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
-                        Text(Formatters.formatBytes(peer.uploaded), modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
+                        Text(peer.address, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

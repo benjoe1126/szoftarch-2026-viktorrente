@@ -75,7 +75,7 @@ class TorrentEngine(
     val downloadingPieces: ByteArray
         get() = assignedPieces.toByteArray()
 
-    private lateinit var _peers: List<PeerAddresses>
+    private var _peers: List<PeerAddresses> = emptyList()
 
     private var _numLeechers: Int = 0
 

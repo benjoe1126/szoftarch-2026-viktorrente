@@ -42,8 +42,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import org.vik.torrente.model.ParsedTorrentInfo
-import org.vik.torrente.model.TorrentMode
+import org.vik.torrente.repository.models.TorrentModeModel
+import org.vik.torrente.ui.model.ParsedTorrentInfo
 import org.vik.torrente.ui.icons.AppIcons
 import org.vik.torrente.ui.util.Formatters
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
@@ -52,11 +52,11 @@ import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 fun AddTorrentDialog(
     parsedInfo: ParsedTorrentInfo,
     initialDestinationPath: String,
-    onConfirm: (destinationPath: String, mode: TorrentMode) -> Unit,
+    onConfirm: (destinationPath: String, mode: TorrentModeModel) -> Unit,
     onDismiss: () -> Unit
 ) {
     var destinationPath by remember(initialDestinationPath) { mutableStateOf(initialDestinationPath) }
-    var selectedMode by remember { mutableStateOf(TorrentMode.DOWNLOAD) }
+    var selectedMode by remember { mutableStateOf(TorrentModeModel.DOWNLOADING) }
     
     val directoryPicker = rememberDirectoryPickerLauncher(
         title = "Select Download Destination Folder",
@@ -159,22 +159,22 @@ fun AddTorrentDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     SegmentedButton(
-                        selected = selectedMode == TorrentMode.DOWNLOAD,
-                        onClick = { selectedMode = TorrentMode.DOWNLOAD },
+                        selected = selectedMode == TorrentModeModel.DOWNLOADING,
+                        onClick = { selectedMode = TorrentModeModel.DOWNLOADING },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
                     ) {
                         Text("Download")
                     }
                     SegmentedButton(
-                        selected = selectedMode == TorrentMode.DOWNLOAD_AND_SEED,
-                        onClick = { selectedMode = TorrentMode.DOWNLOAD_AND_SEED },
+                        selected = selectedMode == TorrentModeModel.DOWNLOADING_AND_SEEDING,
+                        onClick = { selectedMode = TorrentModeModel.DOWNLOADING_AND_SEEDING },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
                     ) {
                         Text("Download & Seed")
                     }
                     SegmentedButton(
-                        selected = selectedMode == TorrentMode.SEED,
-                        onClick = { selectedMode = TorrentMode.SEED },
+                        selected = selectedMode == TorrentModeModel.SEEDING,
+                        onClick = { selectedMode = TorrentModeModel.SEEDING },
                         shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
                     ) {
                         Text("Seed Only")

@@ -1,9 +1,12 @@
 package org.vik.torrente
 
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import org.vik.torrente.repository.TorrentRepository
+import org.vik.torrente.repository.database.JvmDatabaseDriverFactory
 import java.awt.Dimension
 import java.awt.Desktop
 import java.io.File
@@ -17,9 +20,11 @@ fun main() = application {
         state = windowState
     ) {
         window.minimumSize = Dimension(720, 480)
+        val repository = remember { TorrentRepository(JvmDatabaseDriverFactory()) }
         App(
             defaultDownloadDirectory = getDefaultDownloadDirectory(),
-            onOpenDirectory = { openDirectory(it) }
+            onOpenDirectory = { openDirectory(it) },
+            repository = repository,
         )
     }
 }

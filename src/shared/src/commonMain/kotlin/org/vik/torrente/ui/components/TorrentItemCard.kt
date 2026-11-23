@@ -37,7 +37,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
-import org.vik.torrente.model.Torrent
+import org.vik.torrente.ui.model.Torrent
+import org.vik.torrente.repository.models.TorrentStatusModel
+import org.vik.torrente.repository.models.TorrentModeModel
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
@@ -48,7 +50,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
-import org.vik.torrente.model.TorrentStatus
 import org.vik.torrente.ui.icons.AppIcons
 import org.vik.torrente.ui.util.Formatters
 
@@ -56,10 +57,9 @@ import org.vik.torrente.ui.util.Formatters
 fun TorrentItemCard(
     torrent: Torrent,
     onTogglePlayPause: (String) -> Unit,
+    onStop: (String) -> Unit,
     onDelete: (String) -> Unit,
     onOpenFolder: (String) -> Unit,
-    onReannounce: (String) -> Unit,
-    onAddPeer: (String, String) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -83,9 +83,9 @@ fun TorrentItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Play/Pause button styled with Material You primary / container roles
-                val isDownloading = torrent.status == TorrentStatus.DOWNLOADING
-                val isSeeding = torrent.status == TorrentStatus.SEEDING
-                val isRunning = isDownloading || isSeeding
+                val isRunning = torrent.mode == TorrentModeModel.DOWNLOADING ||
+                    torrent.mode == TorrentModeModel.DOWNLOADING_AND_SEEDING ||
+                    torrent.mode == TorrentModeModel.SEEDING
                 FilledIconButton(
                     onClick = { onTogglePlayPause(torrent.id) },
                     modifier = Modifier.size(40.dp),
@@ -105,6 +105,24 @@ fun TorrentItemCard(
                     Icon(
                         imageVector = if (isRunning) AppIcons.Pause else AppIcons.Play,
                         contentDescription = if (isRunning) "Pause" else "Resume",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = { onStop(torrent.id) },
+                    modifier = Modifier.size(40.dp),
+                    enabled = isRunning ||
+                        torrent.mode == TorrentModeModel.PAUSED_DOWNLOADING ||
+                        torrent.mode == TorrentModeModel.PAUSED_DOWNLOADING_AND_SEEDING ||
+                        torrent.mode == TorrentModeModel.PAUSED_SEEDING,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.outline
+                    )
+                ) {
+                    Icon(
+                        imageVector = AppIcons.Stop,
+                        contentDescription = "Stop torrent",
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -140,38 +158,6 @@ fun TorrentItemCard(
                     )
                 }
 
-                /*Box {
-                    IconButton(
-                        onClick = { expanded = true },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.MoreVert,
-                            contentDescription = "More options",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    /*DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Reannounce") },
-                            onClick = {
-                                expanded = false
-                                onReannounce(torrent.id)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Add Peer") },
-                            onClick = {
-                                expanded = false
-                                peerIpAndPort = ""
-                                showAddPeerDialog = true
-                            }
-                        )
-                    }*/
-                }*/
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -210,21 +196,25 @@ fun TorrentItemCard(
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = when {
                                 torrent.isFinished -> MaterialTheme.colorScheme.tertiary
-                                torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                                torrent.status == TorrentStatusModel.PAUSED -> MaterialTheme.colorScheme.outline
                                 else -> MaterialTheme.colorScheme.primary
                             }
                         )
 
                         // Speed or Status
                         val speedLabel = when {
-                            torrent.status == TorrentStatus.SEEDING -> "Seeding (↑ ${Formatters.formatSpeed(torrent.uploadSpeedBytesPerSec)})"
-                            torrent.status == TorrentStatus.CHECKING -> "Checking"
-                            torrent.status == TorrentStatus.STARTING -> "Starting"
-                            torrent.status == TorrentStatus.STOPPED -> "Stopped"
-                            torrent.status == TorrentStatus.ERROR -> "Error"
+                            torrent.status == TorrentStatusModel.SEEDING && torrent.uploadSpeedBytesPerSec > 0 ->
+                                "Seeding (↑ ${Formatters.formatSpeed(torrent.uploadSpeedBytesPerSec)})"
+                            torrent.status == TorrentStatusModel.SEEDING -> "Seeding"
+                            torrent.status == TorrentStatusModel.CHECKING -> "Checking"
+                            torrent.status == TorrentStatusModel.STARTING -> "Starting"
+                            torrent.status == TorrentStatusModel.STOPPED -> "Stopped"
+                            torrent.status == TorrentStatusModel.ERROR -> "Error"
                             torrent.isFinished -> "Finished"
-                            torrent.status == TorrentStatus.PAUSED -> "Paused"
-                            else -> "↓ ${Formatters.formatSpeed(torrent.downloadSpeedBytesPerSec)}"
+                            torrent.status == TorrentStatusModel.PAUSED -> "Paused"
+                            torrent.downloadSpeedBytesPerSec > 0 ->
+                                "↓ ${Formatters.formatSpeed(torrent.downloadSpeedBytesPerSec)}"
+                            else -> ""
                         }
 
                         Text(
@@ -235,7 +225,7 @@ fun TorrentItemCard(
                             ),
                             color = when {
                                 torrent.isFinished -> MaterialTheme.colorScheme.tertiary
-                                torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                                torrent.status == TorrentStatusModel.PAUSED -> MaterialTheme.colorScheme.outline
                                 else -> MaterialTheme.colorScheme.secondary
                             }
                         )
@@ -268,7 +258,7 @@ fun TorrentItemCard(
                             ),
                             color = when {
                                 torrent.isFinished -> MaterialTheme.colorScheme.tertiary
-                                torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                                torrent.status == TorrentStatusModel.PAUSED -> MaterialTheme.colorScheme.outline
                                 else -> MaterialTheme.colorScheme.secondary
                             }
                         )
@@ -284,7 +274,7 @@ fun TorrentItemCard(
                         .clip(RoundedCornerShape(4.dp)),
                     color = when {
                         torrent.isFinished -> MaterialTheme.colorScheme.tertiary
-                        torrent.status == TorrentStatus.PAUSED -> MaterialTheme.colorScheme.outline
+                        torrent.status == TorrentStatusModel.PAUSED -> MaterialTheme.colorScheme.outline
                         else -> MaterialTheme.colorScheme.primary
                     },
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -299,7 +289,10 @@ fun TorrentItemCard(
                     val downloadedStr = Formatters.formatBytes(torrent.downloadedBytes)
                     val totalStr = Formatters.formatBytes(torrent.totalBytes)
                     
-                    val metadataStr = if (torrent.status == TorrentStatus.STOPPED || torrent.status == TorrentStatus.PAUSED) {
+                    val metadataStr = if (
+                        torrent.status == TorrentStatusModel.STOPPED ||
+                        torrent.status == TorrentStatusModel.PAUSED
+                    ) {
                         "$downloadedStr of $totalStr"
                     } else {
                         "$downloadedStr of $totalStr • Peers: ${torrent.peers}"
