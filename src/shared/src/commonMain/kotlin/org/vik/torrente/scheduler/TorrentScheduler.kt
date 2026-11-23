@@ -110,29 +110,7 @@ class TorrentScheduler(val repository: TorrentRepository) {
                     }
 
                     //query the handler states
-                    val handlersCopy=mutableListOf<HandlerData>();
-                    synchronized(scheduler.handlers)
-                    {
-                        scheduler.handlers.forEach{handler->handlersCopy.add(handler)}
-                    }
-                    handlersCopy.forEach {
-                        handler->
-                        val snapshot=handler.handler.torrentSnapshot()
-                        val torrents=scheduler.repository.getTorrentsByFilenameAndDownloaddir(handler.context.torrentFilePath,handler.context.downloadDir)
-                        if(torrents.isEmpty()||snapshot==null)
-                            return@forEach;
-                        scheduler.repository.getPeersByTorrent(torrents[0].getId()).forEach { p->scheduler.repository.deletePeer(p.getId()) }
-                        snapshot.peers.forEach { p-> scheduler.repository.insertPeer(PeerInfo(torrents[0].getId(),p.host+":"+p.portNumber.toString(),p.host+":"+p.portNumber.toString(),PeerStatus.SEEDING))}
-                        scheduler.repository.getPiecesByTorrent(torrents[0].getId()).forEach{
-                            p->
-                            if(snapshot.piecesDownloaded.hasBit(p.number.toInt()))
-                                scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.AVAILABLE,p.downloadPath));
-                            else if(snapshot.piecesDownloading.hasBit(p.number.toInt()))
-                                scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.DOWNLOADING,p.downloadPath));
-                            else
-                                scheduler.repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
-                        }
-                    }
+                    scheduler.updateRepository();
                 }
                 catch(e: InterruptedException)
                 {
@@ -151,16 +129,39 @@ class TorrentScheduler(val repository: TorrentRepository) {
             }
         }
 
-        private fun ByteArray.hasBit(index: Int): Boolean {
-            if(index < 0)
-                return false
-            val byteIndex = index / 8
-            return byteIndex < size && (this[byteIndex].toInt() and (1 shl (index % 8))) != 0
-        }
-
         fun signalStop()
         {
             shouldStop.set(true);
+        }
+    }
+
+    private fun updateRepository()
+    {
+        val handlersCopy=mutableListOf<HandlerData>();
+        synchronized(handlers)
+        {
+            handlers.forEach{handler->handlersCopy.add(handler)}
+        }
+        handlersCopy.forEach {
+                handler->
+            val snapshot=handler.handler.torrentSnapshot()
+            val torrents=repository.getTorrentsByFilenameAndDownloaddir(handler.context.torrentFilePath,handler.context.downloadDir)
+            if(torrents.isEmpty()||snapshot==null)
+                return@forEach;
+            val torrent=torrents[0];
+            repository.updateTorrent(TorrentInfo(torrent.hash,torrent.tracker,torrent.name, torrent.length, torrent.mode.toStatus(), torrent.mode, torrent.filePath, torrent.downloadDir));
+            repository.getPeersByTorrent(torrent.getId()).forEach { p->repository.deletePeer(p.getId()) }
+            snapshot.peers.forEach { p-> repository.insertPeer(PeerInfo(torrent.getId(),p.host+":"+p.portNumber.toString(),p.host+":"+p.portNumber.toString(),PeerStatus.SEEDING))}
+            repository.getPiecesByTorrent(torrent.getId()).forEach{
+                    p->
+                if(snapshot.piecesDownloaded.hasBit(p.number.toInt()))
+                    repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.AVAILABLE,p.downloadPath));
+                else if(snapshot.piecesDownloading.hasBit(p.number.toInt()))
+                    repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.DOWNLOADING,p.downloadPath));
+                else
+                    repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
+                    repository.updatePiece(PieceInfo(p.torrent,p.number,p.hash,p.length,PieceStatus.NOT_AVAILABLE,p.downloadPath));
+            }
         }
     }
 
@@ -209,15 +210,6 @@ class TorrentScheduler(val repository: TorrentRepository) {
         if(handlerData.context.send(TorrentCommand.Pause))
         {
             handlerData.paused=true;
-
-            val torrents=repository.getTorrentsByFilenameAndDownloaddir(handlerData.context.torrentFilePath,handlerData.context.downloadDir);
-            if(torrents.isNotEmpty())
-            {
-                val t = torrents[0];
-                repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length, t.mode.toStatus(),
-                    t.mode,t.filePath,t.downloadDir));
-            }
-
             return true;
         }
         return false;
@@ -233,15 +225,6 @@ class TorrentScheduler(val repository: TorrentRepository) {
         if(handlerData.context.send(TorrentCommand.Resume))
         {
             handlerData.paused=false;
-
-            val torrents=repository.getTorrentsByFilenameAndDownloaddir(handlerData.context.torrentFilePath,handlerData.context.downloadDir);
-            if(torrents.isNotEmpty())
-            {
-                val t = torrents[0];
-                repository.updateTorrent(TorrentInfo(t.hash,t.tracker,t.name,t.length, t.mode.toStatus(),
-                    t.mode,t.filePath,t.downloadDir));
-            }
-
             return true;
         }
         return false;
@@ -347,27 +330,32 @@ class TorrentScheduler(val repository: TorrentRepository) {
     }
 
     private fun TorrentPhase.toModel(): TorrentStatusModel {
-        when(this)
-        {
-            TorrentPhase.DOWNLOADING->return TorrentStatusModel.DOWNLOADING;
-            TorrentPhase.CHECKING -> return TorrentStatusModel.CHECKING;
-            TorrentPhase.PAUSED -> return TorrentStatusModel.PAUSED;
-            TorrentPhase.SEEDING -> return TorrentStatusModel.SEEDING;
-            TorrentPhase.STARTING -> return TorrentStatusModel.STARTING;
-            TorrentPhase.STOPPED -> return TorrentStatusModel.STOPPED;
+        return when(this) {
+            TorrentPhase.DOWNLOADING-> TorrentStatusModel.DOWNLOADING;
+            TorrentPhase.CHECKING -> TorrentStatusModel.CHECKING;
+            TorrentPhase.PAUSED -> TorrentStatusModel.PAUSED;
+            TorrentPhase.SEEDING -> TorrentStatusModel.SEEDING;
+            TorrentPhase.STARTING -> TorrentStatusModel.STARTING;
+            TorrentPhase.STOPPED -> TorrentStatusModel.STOPPED;
         }
     }
 
     private fun TorrentModeModel.toStatus():TorrentStatusModel{
-        when(this)
-        {
-            TorrentModeModel.DOWNLOADING->return TorrentStatusModel.DOWNLOADING;
-            TorrentModeModel.PAUSED_DOWNLOADING->return TorrentStatusModel.PAUSED;
-            TorrentModeModel.PAUSED_DOWNLOADING_AND_SEEDING->return TorrentStatusModel.PAUSED;
-            TorrentModeModel.PAUSED_SEEDING->return TorrentStatusModel.PAUSED
-            TorrentModeModel.SEEDING->return TorrentStatusModel.SEEDING;
-            TorrentModeModel.DOWNLOADING_AND_SEEDING -> return TorrentStatusModel.DOWNLOADING;
-            else->return TorrentStatusModel.STOPPED;
+        return when(this) {
+            TorrentModeModel.DOWNLOADING-> TorrentStatusModel.DOWNLOADING;
+            TorrentModeModel.PAUSED_DOWNLOADING-> TorrentStatusModel.PAUSED;
+            TorrentModeModel.PAUSED_DOWNLOADING_AND_SEEDING-> TorrentStatusModel.PAUSED;
+            TorrentModeModel.PAUSED_SEEDING-> TorrentStatusModel.PAUSED
+            TorrentModeModel.SEEDING-> TorrentStatusModel.SEEDING;
+            TorrentModeModel.DOWNLOADING_AND_SEEDING -> TorrentStatusModel.DOWNLOADING;
+            else-> TorrentStatusModel.STOPPED;
         }
+    }
+
+    private fun ByteArray.hasBit(index: Int): Boolean {
+        if(index < 0)
+            return false
+        val byteIndex = index / 8
+        return byteIndex < size && (this[byteIndex].toInt() and (1 shl (index % 8))) != 0
     }
 }
