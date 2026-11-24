@@ -1,6 +1,30 @@
 # Telepítési dokumentáció
 
-A programot forráskódból kell buildelni, ehhez a következőkre van szükség:
+## Előkövetelmény
+
+A futtatáshoz (is) szükséges az openjdk (>=17) - https://jdk.java.net/ 
+
+## Előre elkészített JAR
+
+A következő paranccsal letölthető és azonnal futtatható a program:  
+
+**windows**
+
+```powershell
+wget https://github.com/benjoe1126/szoftarch-2026-viktorrente/releases/download/org.vik.torrente-windows-x64-<version>.jar
+java -jar org.vik.torrente-windows-x64-<version>.jar
+```
+
+**linux**
+
+```bash
+wget https://github.com/benjoe1126/szoftarch-2026-viktorrente/releases/download/org.vik.torrente-linux-x64-<version>.jar
+java -jar org.vik.torrente-windows-x64-<version>.jar
+```
+
+## Source-ból
+
+Ha a programot forráskódból buildeljük, akkor ehhez a következőkre van szükség:
 - **JDK, legalább 17-es verzió** (tesztelve: OpenJDK 21) – https://jdk.java.net/
 - Gradle-t nem szükséges külön telepíteni: a projektben található Gradle wrapper (`gradlew`) az első futtatáskor automatikusan letölti a megfelelő verziót.
 - A JDK az IntelliJ IDEA fejlesztőkörnyezettel együtt is letölthető – https://www.jetbrains.com/idea/download/
