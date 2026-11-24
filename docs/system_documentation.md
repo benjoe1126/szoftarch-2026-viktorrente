@@ -10,7 +10,7 @@ Az adatbázis-műveletekhez SQLDelight-ot használtunk, amely már meglévő SQL
 Az alkalmazás, lévén hogy torrent kliens, különböző hálózati hívásokat végez (UDP socket nyitása, UDP datagram küldése, TCP kapcsolat a peerekkel stb.). A hálózati műveletek kezelésére a `java.net` modult használtuk, mivel relatíve alacsony szintű hálózati API-ra volt szükségünk, ez pedig pontosan ezt biztosította.  
 A párhuzamos végrehajtáshoz Kotlin Coroutine-okat és Flow-t, illetve a hálózati réteg szintjén Java szálakat (thread pool) használunk.  
 Végezetül build rendszernek Gradle-t használtunk, mivel relatíve egyszerű függőségkezelést biztosít, és jól együttműködik a különböző Java IDE-kkel.  
-A program futtatásához legalább Java 17 szükséges.
+A program futtatásához legalább Java 21 szükséges.
 
 ## Rendszerarchitektúra
 
