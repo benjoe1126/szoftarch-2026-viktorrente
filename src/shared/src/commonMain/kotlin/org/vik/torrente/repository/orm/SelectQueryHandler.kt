@@ -35,6 +35,22 @@ fun TorrentRepository.getTorrentByName(torrentName : String):TorrentInfo?{
     return if(result!=null) TorrentInfo(result.hash, result.tracker, result.name, result.length, TorrentStatusModel.entries[result.status.toInt()], TorrentModeModel.entries[result.mode.toInt()], result.file_path, result.download_dir) else null;
 }
 
+fun TorrentRepository.getTorrentsByFilenameAndDownloaddir(fileName:String, downloadDir:String) : List<TorrentInfo> {
+    return db.selectQueries.queryTorrentsByFilepathAndDownloaddir(fileName,downloadDir).executeAsList().map{
+        torrent ->
+        TorrentInfo(
+            torrent.hash,
+            torrent.tracker,
+            torrent.name,
+            torrent.length,
+            TorrentStatusModel.entries[torrent.status.toInt()],
+            TorrentModeModel.entries[torrent.mode.toInt()],
+            torrent.file_path,
+            torrent.download_dir
+        )
+    };
+}
+
 fun TorrentRepository.getPieceById(piece : PieceId) : PieceInfo? {
     val result=db.selectQueries.queryPieceById(piece.number, piece.torrent.hash).executeAsOneOrNull();
 

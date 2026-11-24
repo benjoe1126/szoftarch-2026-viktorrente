@@ -12,6 +12,11 @@ SELECT *
 FROM Torrents
 WHERE name=:name;
 
+queryTorrentsByFilepathAndDownloaddir:
+SELECT *
+FROM Torrents
+WHERE file_path=:file_path AND download_dir=:download_dir;
+
 queryPieceById:
 SELECT *
 FROM Pieces
