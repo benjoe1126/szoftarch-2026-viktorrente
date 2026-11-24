@@ -2,7 +2,7 @@
 
 ## Előkövetelmény
 
-A futtatáshoz (is) szükséges az openjdk (>=17) - https://jdk.java.net/ 
+A futtatáshoz (is) szükséges az openjdk (>=21) - https://jdk.java.net/ 
 
 ## Előre elkészített JAR
 
@@ -25,7 +25,7 @@ java -jar org.vik.torrente-windows-x64-<version>.jar
 ## Source-ból
 
 Ha a programot forráskódból buildeljük, akkor ehhez a következőkre van szükség:
-- **JDK, legalább 17-es verzió** (tesztelve: OpenJDK 21) – https://jdk.java.net/
+- **JDK, legalább 21-es verzió** (tesztelve: OpenJDK 21) – https://jdk.java.net/
 - Gradle-t nem szükséges külön telepíteni: a projektben található Gradle wrapper (`gradlew`) az első futtatáskor automatikusan letölti a megfelelő verziót.
 - A JDK az IntelliJ IDEA fejlesztőkörnyezettel együtt is letölthető – https://www.jetbrains.com/idea/download/
 
