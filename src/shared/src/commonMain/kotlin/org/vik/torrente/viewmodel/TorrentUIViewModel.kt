@@ -48,6 +48,8 @@ class TorrentUIViewModel(
     private var lastTimeRefreshed = AtomicLong(0)
 
     val downloadStates = mutableMapOf<String, Pair<Long, Long>>()
+
+    val downloadSpeeds = mutableMapOf<String, Long>()
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -223,9 +225,6 @@ class TorrentUIViewModel(
 
     fun getTorrentInfo(torrentId: String): Torrent? = _torrents.value.firstOrNull { it.id == torrentId }
 
-
-
-
     fun clearError() {
         _error.value = null
     }
@@ -274,14 +273,21 @@ class TorrentUIViewModel(
         val downloadSpeed = when(val downloadState = this@TorrentUIViewModel.downloadStates[torrentId.hash]) {
             null -> {
                 this@TorrentUIViewModel.downloadStates[torrentId.hash] = Pair(System.currentTimeMillis(), downloaded)
-                0
+                this@TorrentUIViewModel.downloadSpeeds[torrentId.hash]?:0
             }
             else -> {
                 val (lastModificationTime, lastDownloadedBytes) = downloadState
                 val timedelta = System.currentTimeMillis() - lastModificationTime
-                val bytesDelta = downloaded - lastDownloadedBytes
-                this@TorrentUIViewModel.downloadStates[torrentId.hash] = Pair(System.currentTimeMillis(), downloaded)
-                1000 * (bytesDelta / timedelta)
+                // only refresh every second
+                if(timedelta > 1000){
+                    val bytesDelta = downloaded - lastDownloadedBytes
+                    this@TorrentUIViewModel.downloadStates[torrentId.hash] = Pair(System.currentTimeMillis(), downloaded)
+                    this@TorrentUIViewModel.downloadSpeeds[torrentId.hash] =  1000 * (bytesDelta / timedelta)
+                    1000 * (bytesDelta / timedelta)
+                }else {
+                    this@TorrentUIViewModel.downloadSpeeds[torrentId.hash]?:0
+                }
+
             }
         }
         Torrent(
