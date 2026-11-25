@@ -16,6 +16,7 @@ import org.vik.torrente.torrent.engine.PeerAddresses
 import org.vik.torrente.torrent.engine.TorrentEngine
 import java.util.BitSet
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
@@ -34,7 +35,7 @@ data class TorrentSnapshot(
     val piecesDownloading:ByteArray,
     val peers: List<PeerAddresses>,
     val numLeechers: Int,
-    val numSeeders: Int
+    val numSeeders: Int,
 )
 
 class TorrentHandler(private val context: TorrentContext) {
@@ -56,6 +57,7 @@ class TorrentHandler(private val context: TorrentContext) {
     private var previousDownloaded = 0L
     private var previousUploaded = 0L
 
+
     fun torrentSnapshot(): TorrentSnapshot? {
         return engine?.let {
             TorrentSnapshot(
@@ -63,7 +65,7 @@ class TorrentHandler(private val context: TorrentContext) {
                 piecesDownloading = it.downloadingPieces,
                 peers = it.peers,
                 numLeechers = it.numLeechers,
-                numSeeders = it.numSeeders
+                numSeeders = it.numSeeders,
             )
         }
     }
@@ -83,7 +85,6 @@ class TorrentHandler(private val context: TorrentContext) {
             reason = StopReason.Cancelled
             throw e
         } catch (e: Exception) {
-            println("[TorrentHandler] ${context.torrentFilePath} failed — ${e.message}")
             reason = StopReason.Failed(e)
         } finally {
             withContext(NonCancellable) {

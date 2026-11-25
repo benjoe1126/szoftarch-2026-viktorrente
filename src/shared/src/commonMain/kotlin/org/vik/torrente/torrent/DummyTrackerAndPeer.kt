@@ -28,7 +28,6 @@ class DummyTrackerServer(private val port: Int = 6969) : Thread("DummyTracker") 
     private val connectionIds = mutableSetOf<Long>()
 
     override fun run() {
-        println("[Tracker] UDP tracker listening on port $port")
         val buffer = ByteArray(1024)
 
         while (!socket.isClosed) {
@@ -198,7 +197,6 @@ class MockPeerServer(
 
             val offset = pieceIndex.toLong() * pieceLength + begin
             if (offset < 0 || offset + length > data.size) {
-                println("[Peer] Ignoring out of range request piece=$pieceIndex, begin=$begin, length=$length")
                 continue
             }
             val block = ByteBuffer.allocate(8 + length).putInt(pieceIndex).putInt(begin)

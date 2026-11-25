@@ -1,6 +1,5 @@
 package org.vik.torrente.scheduler
 
-import androidx.collection.emptyLongSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.vik.torrente.repository.TorrentRepository
@@ -12,7 +11,6 @@ import org.vik.torrente.repository.models.TorrentInfo
 import org.vik.torrente.repository.models.TorrentModeModel
 import org.vik.torrente.repository.models.TorrentStatusModel
 import org.vik.torrente.repository.orm.deletePeer
-import org.vik.torrente.repository.orm.deletePiece
 import org.vik.torrente.repository.orm.getPeersByTorrent
 import org.vik.torrente.repository.orm.getPiecesByTorrent
 import org.vik.torrente.repository.orm.getTorrents
@@ -28,11 +26,8 @@ import org.vik.torrente.torrent.TorrentMode
 import org.vik.torrente.torrent.TorrentPhase
 import org.vik.torrente.torrent.TorrentStatus
 import org.vik.torrente.torrent.engine.PeerListener
-import java.util.BitSet
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Handler
-import kotlin.reflect.typeOf
 
 
 class TorrentScheduler(val repository: TorrentRepository) {
@@ -71,15 +66,18 @@ class TorrentScheduler(val repository: TorrentRepository) {
 
     private class DBListener(val scheduler:TorrentScheduler, val repository:TorrentRepository) : Thread(){
         val shouldStop = AtomicBoolean(false);
+        private val SleepInterval = 50L
+
 
         override fun run() {
             var cyclesUntilNextUpdate=0;
+            var cyclesSpentUntilUpdate=0
             while(!shouldStop.get())
             {
                 try
                 {
                     //sleepy time
-                    sleep(50);
+                    sleep(SleepInterval);
 
                     //check the torrent states in the repository
                     val torrents=repository.getTorrents();
@@ -114,6 +112,7 @@ class TorrentScheduler(val repository: TorrentRepository) {
 
                     //query the handler states
                     cyclesUntilNextUpdate--;
+                    cyclesSpentUntilUpdate++
                     if(cyclesUntilNextUpdate<=0)
                     {
                         cyclesUntilNextUpdate=5;
@@ -193,7 +192,6 @@ class TorrentScheduler(val repository: TorrentRepository) {
 
         handler.start(CoroutineScope(Dispatchers.IO));
 
-        println("[TorrentScheduler] Torrent "+torrent.filePath+" started");
         return true;
     }
 

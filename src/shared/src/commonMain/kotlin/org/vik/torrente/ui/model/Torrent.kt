@@ -3,6 +3,7 @@ package org.vik.torrente.ui.model
 import org.vik.torrente.repository.models.PeerStatus
 import org.vik.torrente.repository.models.TorrentModeModel
 import org.vik.torrente.repository.models.TorrentStatusModel
+import java.sql.Time
 
 /**
  * Represents a single file inside a multi-file or single-file torrent.
@@ -35,6 +36,7 @@ data class Torrent(
     val downloadedBytes: Long,
     val downloadSpeedBytesPerSec: Long,
     val uploadSpeedBytesPerSec: Long,
+    val lastModificationTime: Long = System.currentTimeMillis(),
     val status: TorrentStatusModel,
     val destinationPath: String,
     val mode: TorrentModeModel = TorrentModeModel.INACTIVE,
