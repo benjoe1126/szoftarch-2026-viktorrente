@@ -36,12 +36,20 @@ import org.vik.torrente.ui.model.TorrentFile
 import org.vik.torrente.ui.model.Tracker
 import org.vik.torrente.utils.toHex
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
+
 
 class TorrentUIViewModel(
     private val repository: TorrentRepository,
 ) : ViewModel() {
     private val _torrents = MutableStateFlow<List<Torrent>>(emptyList())
     val torrents: StateFlow<List<Torrent>> = _torrents.asStateFlow()
+
+    private var lastTimeRefreshed = AtomicLong(0)
+
+    val downloadStates = mutableMapOf<String, Pair<Long, Long>>()
+
+    val downloadSpeeds = mutableMapOf<String, Long>()
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -215,8 +223,7 @@ class TorrentUIViewModel(
         }
     }
 
-    fun getTorrentInfo(torrentId: String): Torrent? =
-        _torrents.value.firstOrNull { it.id == torrentId }
+    fun getTorrentInfo(torrentId: String): Torrent? = _torrents.value.firstOrNull { it.id == torrentId }
 
     fun clearError() {
         _error.value = null
@@ -263,13 +270,33 @@ class TorrentUIViewModel(
             .filter { it.status == RepositoryPieceStatus.AVAILABLE }
             .sumOf { it.length }
             .coerceAtMost(info.length)
+        val downloadSpeed = when(val downloadState = this@TorrentUIViewModel.downloadStates[torrentId.hash]) {
+            null -> {
+                this@TorrentUIViewModel.downloadStates[torrentId.hash] = Pair(System.currentTimeMillis(), downloaded)
+                this@TorrentUIViewModel.downloadSpeeds[torrentId.hash]?:0
+            }
+            else -> {
+                val (lastModificationTime, lastDownloadedBytes) = downloadState
+                val timedelta = System.currentTimeMillis() - lastModificationTime
+                // only refresh every second
+                if(timedelta > 1000){
+                    val bytesDelta = downloaded - lastDownloadedBytes
+                    this@TorrentUIViewModel.downloadStates[torrentId.hash] = Pair(System.currentTimeMillis(), downloaded)
+                    this@TorrentUIViewModel.downloadSpeeds[torrentId.hash] =  1000 * (bytesDelta / timedelta)
+                    1000 * (bytesDelta / timedelta)
+                }else {
+                    this@TorrentUIViewModel.downloadSpeeds[torrentId.hash]?:0
+                }
 
+            }
+        }
         Torrent(
             id = info.hash,
             name = info.name,
             totalBytes = info.length,
             downloadedBytes = downloaded,
-            downloadSpeedBytesPerSec = 0,
+            lastModificationTime = System.currentTimeMillis(),
+            downloadSpeedBytesPerSec = downloadSpeed,
             uploadSpeedBytesPerSec = 0,
             status = info.status,
             destinationPath = info.downloadDir,

@@ -66,7 +66,6 @@ class PeerConnection(
             running.set(true)
             true
         } catch (e: Exception) {
-            println("[PeerConnection] Failed to connect to $this — ${e.message}")
             closeSocket()
             false
         }

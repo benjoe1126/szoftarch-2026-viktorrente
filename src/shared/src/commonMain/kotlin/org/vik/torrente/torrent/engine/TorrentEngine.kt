@@ -52,15 +52,17 @@ class TorrentEngine(
 
     // Stats reported to the tracker
     private val _downloaded = AtomicLong(0)
+
     private val _uploaded = AtomicLong(0)
     private val verifiedBytes = AtomicLong(0)
-
     /** Total bytes of piece data received from peers, including data that later failed verification. */
     val downloaded: Long get() = _downloaded.get()
     /** Bytes still needed to complete the torrent. */
+
     val left: Long get() = totalSize - verifiedBytes.get()
     /** Total bytes of piece data sent to peers. */
     val uploaded: Long get() = _uploaded.get()
+
 
     private val storage = PieceStorage(metadata, File(downloadDir))
 
@@ -159,7 +161,6 @@ class TorrentEngine(
             if (sha1.digest(data).contentEquals(metadata.pieceHashes[index])) valid.set(index)
         }
         restorePieces(valid)
-        println("[TorrentEngine] Found ${valid.cardinality()}/$numPieces valid pieces on disk")
         return valid.cardinality()
     }
 
@@ -193,7 +194,6 @@ class TorrentEngine(
                 this@TorrentEngine._numLeechers = response.leechers
                 this@TorrentEngine._numSeeders = response.seeders
                 this@TorrentEngine._peers = response.peerAddresses.filter { it.address != 0 && it.portNumber != 0 }
-                println("[TorrentEngine] Tracker $url returned ${response.peerAddresses.size} peers (seeders=${response.seeders}, leechers=${response.leechers})")
                 return@withContext this@TorrentEngine.peers
             } catch (e: Exception) {
                 println("[TorrentEngine] Tracker $url failed — ${e.message}")
@@ -267,7 +267,6 @@ class TorrentEngine(
         }
         if (accepted) {
             connection.start()
-            println("[TorrentEngine] Connected to peer $connection")
         } else {
             if (connected) connection.disconnect()
             fillConnectionSlots()
@@ -292,7 +291,6 @@ class TorrentEngine(
         }
         if (synchronized(lock) { addSession(connection) }) {
             connection.start()
-            println("[TorrentEngine] Accepted peer $connection")
         } else {
             connection.disconnect()
         }
@@ -320,7 +318,6 @@ class TorrentEngine(
         synchronized(lock) {
             if (downloading) return
             downloading = true
-            println("[TorrentEngine] Starting download of $numPieces pieces ($totalSize bytes)")
             sessions.values.toList().forEach {
                 updateInterest(it)
                 requestBlocks(it)
@@ -330,7 +327,6 @@ class TorrentEngine(
 
     /** Disconnects all peers and closes the downloaded files. */
     fun disconnectAll() {
-        println("[TorrentEngine] Disconnecting all peers...")
         val connections = synchronized(lock) {
             downloading = false
             stopped = true
@@ -345,7 +341,6 @@ class TorrentEngine(
     }
 
     private fun handleDisconnect(connection: PeerConnection, reason: String) {
-        println("[TorrentEngine] $reason")
         synchronized(lock) {
             sessions.remove(connection)?.let {
                 releaseCurrentPiece(it)
@@ -431,7 +426,6 @@ class TorrentEngine(
         if (piece == null || piece.index != msg.pieceIndex || msg.begin + msg.block.size > piece.data.size) {
             return // stale block, e.g. from before a choke
         }
-
         _downloaded.addAndGet(msg.block.size.toLong())
         msg.block.copyInto(piece.data, msg.begin)
         piece.inFlight--
@@ -448,7 +442,6 @@ class TorrentEngine(
     private fun completePiece(piece: ActivePiece) {
         val hash = MessageDigest.getInstance("SHA-1").digest(piece.data)
         if (!hash.contentEquals(metadata.pieceHashes[piece.index])) {
-            println("[TorrentEngine] Piece ${piece.index} failed hash check, will retry")
             return
         }
 
@@ -458,7 +451,6 @@ class TorrentEngine(
         sessions.keys.toList().forEach { it.sendMessage(PeerWireMessage.Have(piece.index)) }
 
         if (havePieces.cardinality() == numPieces) {
-            println("[TorrentEngine] Download complete")
             sessions.values.toList().forEach { updateInterest(it) }
             if (completedAnnounced.compareAndSet(false, true)) announceInBackground(AnnounceEvent.COMPLETED)
         }
