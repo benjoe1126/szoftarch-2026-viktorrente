@@ -358,25 +358,27 @@ A `PeerWireMessage` által kezelt BEP 3 wire üzenetek összefoglalása:
 
 **Képernyőfelépítés és komponensek:**
 
-A főablak alapértelmezett mérete `1000 × 680 dp` (minimális méret: `720 × 480 px`), színsémája automatikusan követi az operációs rendszer világos vagy sötét módját (`isSystemInDarkTheme()`). A felület szerkezetét a 2. ábra mutatja be.
+A főablak alapértelmezett mérete `1000 × 680 dp` (minimális méret: `720 × 480 px`), színsémája automatikusan követi az operációs rendszer világos vagy sötét módját (`isSystemInDarkTheme()`). A főablakot aktív letöltés közben a 2. ábra, az új torrent felvételére szolgáló dialógusablakot pedig a 3. ábra mutatja be.
 
-![A Viktorrente grafikus felhasználói felületének felépítése és dialógusai](gui_layout.png){ width=98% }
+![A Viktorrente főablaka aktív letöltéssel és a TorrentDashboard nézettel](torrent_list.png){ width=84% }
 
 - **`TopBar`:** az ablak tetején megjeleníti az alkalmazás nevét (*Viktorrente*) és az *Add Torrent* gombot, amely a FileKit natív `.torrent` fájlválasztóját nyitja meg.
-- **`TorrentList` és `TorrentItemCard`:** üres lista esetén központi tájékoztató nézetet és hozzáadás gombot jelenít meg; aktív lista esetén görgethető `LazyColumn` kártyákat rajzol ki. Minden `TorrentItemCard` bal oldalán négy gyorsgomb található (*Play/Pause*, *Stop*, *Open Folder*, *Delete*), jobb oldalán pedig a torrent neve, a százalékos előrehaladás, az állapotcímke, egy Material 3 `LinearProgressIndicator`, a letöltött/teljes méret, a peerek száma és a mentési útvonal.
+- **`TorrentList` és `TorrentItemCard`:** üres lista esetén központi tájékoztató nézetet és hozzáadás gombot jelenít meg; aktív lista esetén görgethető `LazyColumn` kártyákat rajzol ki. Minden `TorrentItemCard` bal oldalán négy gyorsgomb található (*Play/Pause*, *Stop*, *Open Folder*, *Delete*), jobb oldalán pedig a torrent neve, a százalékos előrehaladás, az átviteli sebesség és becsült hátralévő idő (vagy állapotcímke), egy Material 3 `LinearProgressIndicator`, a letöltött/teljes méret, a peerek száma és a mentési útvonal.
 - **`TorrentDashboard`:** egy torrentkártyára kattintva az ablak alján megnyíló (`300 dp` magas), bezárható részletező panel 4 füllel:
   1. *General:* mentési könyvtár, letöltött/teljes méret (`Formatters.formatBytes`), darabszám, státusz.
   2. *Trackers:* a torrenthez tartozó tracker URL-ek listája.
   3. *Peers:* alapértelmezett fül, amely az ismert peerek IP:port címeit listázza.
   4. *Content:* a torrent összes fájljának relatív útvonala és mérete táblázatos elrendezésben.
-- **`AddTorrentDialog` és `Restart` dialógus:** új `.torrent` fájl kiválasztásakor az `AddTorrentDialog` lehetőséget ad a letöltési könyvtár kézi megadására vagy böngészésére, valamint a kezdő mód kiválasztására (`SingleChoiceSegmentedButtonRow`: *Download*, *Download & Seed*, *Seed Only*). Leállított (`INACTIVE`) torrent újraindításakor külön `AlertDialog` kérdez rá a kívánt futtatási módra.
+- **`AddTorrentDialog` és `Restart` dialógus:** új `.torrent` fájl kiválasztásakor az `AddTorrentDialog` (3. ábra) lehetőséget ad a letöltési könyvtár kézi megadására vagy böngészésére, valamint a kezdő mód kiválasztására (`SingleChoiceSegmentedButtonRow`: *Download*, *Download & Seed*, *Seed Only*). Leállított (`INACTIVE`) torrent újraindításakor külön `AlertDialog` kérdez rá a kívánt futtatási módra.
+
+![Új torrent hozzáadása dialógusablak (AddTorrentDialog)](add_torrent.png){ width=82% }
 
 
 # 3. Adat- és adatbázisterv
 
 ## 3.1 Az adatbázis entitás-relációs modellje
 
-A Viktorrente relációs adatbázissémája 5 táblából áll, amelyek az SQLite idegenkulcs-kényszereivel (`PRAGMA foreign_keys = ON`) biztosítják a hivatkozási integritást. A táblák közötti kapcsolatokat a 3. ábra szemlélteti.
+A Viktorrente relációs adatbázissémája 5 táblából áll, amelyek az SQLite idegenkulcs-kényszereivel (`PRAGMA foreign_keys = ON`) biztosítják a hivatkozási integritást. A táblák közötti kapcsolatokat a 4. ábra szemlélteti.
 
 ![Az adatbázis entitás-relációs diagramja](dbschema.png){ width=92% }
 
@@ -397,7 +399,7 @@ A táblák összefoglalása:
 
 ## 3.2 A program objektummodellje
 
-Az adatbázis tábláinak a Kotlin kódban a `org.vik.torrente.repository.models` csomag megváltoztathatatlan (immutable) `data class` entitásai és állapot-enumjai felelnek meg. Minden entitáshoz tartozik egy erős típusú azonosító-osztály (`TorrentId`, `FileId`, `PieceId`, `PeerId`) is, amely megelőzi a kulcsok összecserélését a lekérdezésekben. A réteg osztálydiagramját a 4. ábra mutatja.
+Az adatbázis tábláinak a Kotlin kódban a `org.vik.torrente.repository.models` csomag megváltoztathatatlan (immutable) `data class` entitásai és állapot-enumjai felelnek meg. Minden entitáshoz tartozik egy erős típusú azonosító-osztály (`TorrentId`, `FileId`, `PieceId`, `PeerId`) is, amely megelőzi a kulcsok összecserélését a lekérdezésekben. A réteg osztálydiagramját az 5. ábra mutatja.
 
 ![A repository adatmodell osztálydiagramja](uml_models.png){ width=88% }
 
@@ -512,7 +514,7 @@ A megjelenítési réteg elválasztása érdekében a `org.vik.torrente.ui.model
 
 ## 4.2 Egy torrent teljes életciklusa
 
-Egy torrent a felvételétől a leállításáig vagy befejezéséig az 5. ábrán látható állapotokon halad keresztül.
+Egy torrent a felvételétől a leállításáig vagy befejezéséig a 6. ábrán látható állapotokon halad keresztül.
 
 ![Egy torrent állapotátmenetei a Viktorrente rendszerben](lifecycle.png){ width=98% }
 
